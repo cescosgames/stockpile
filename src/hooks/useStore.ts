@@ -47,6 +47,21 @@ const SEED_TASKS: FeedingTask[] = [
   { id: "t2", label: "Feed animals", session: "PM", feedItemId: "f3", scoops: 1 },
 ];
 
+const CHECKLIST_RETENTION_DAYS = 90;
+
+function pruneCheckedState(state: CheckedState): CheckedState {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - CHECKLIST_RETENTION_DAYS);
+  const cutoffStr = cutoff.toISOString().split("T")[0]; // "YYYY-MM-DD"
+
+  const pruned: CheckedState = {};
+  for (const key in state) {
+    const date = key.slice(0, 10); // keys are `${date}-${session}-${taskId}`
+    if (date >= cutoffStr) pruned[key] = state[key];
+  }
+  return pruned;
+}
+
 const DEFAULT_SETTINGS: Settings = {
   farmName: "My Farm",
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -56,7 +71,7 @@ export function useStore() {
   const [animals, setAnimalsState] = useState<Animal[]>(() => load("animals", SEED_ANIMALS));
   const [feedItems, setFeedItemsState] = useState<FeedItem[]>(() => load("feedItems", SEED_FEED));
   const [feedingTasks, setFeedingTasksState] = useState<FeedingTask[]>(() => load("feedingTasks", SEED_TASKS));
-  const [checkedState, setCheckedStateState] = useState<CheckedState>(() => load("checkedState", {}));
+  const [checkedState, setCheckedStateState] = useState<CheckedState>(() => pruneCheckedState(load("checkedState", {})));
   const [settings, setSettingsState] = useState<Settings>(() => load("settings", DEFAULT_SETTINGS));
 
   useEffect(() => { save("animals", animals); }, [animals]);
