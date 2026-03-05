@@ -33,11 +33,16 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
   return (
     <div className="min-h-screen flex flex-col bg-surface">
       {/* Header */}
-      <header className="bg-surface-raised border-b border-border px-6 py-4 flex items-center justify-between">
+      <header className="relative bg-surface-raised border-b border-border px-6 py-4 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-text-primary leading-none">{farmName}</h1>
+          <h1 className="text-sm font-semibold text-text-primary leading-none">{farmName}</h1>
           <p className="text-xs text-text-muted mt-0.5">{today}</p>
         </div>
+
+        {/* Centered wordmark */}
+        <span className="absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-accent pointer-events-none select-none">
+          Stockpile
+        </span>
 
         <div className="flex items-center gap-3">
           <p className="text-base font-semibold text-text-primary tabular-nums">{clock}</p>

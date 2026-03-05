@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['pwa-192.png', 'pwa-512.png'],
       manifest: {
-        name: 'Farm App',
-        short_name: 'Farm',
-        description: 'Offline farm inventory and feeding checklist',
+        name: 'Stockpile',
+        short_name: 'Stockpile',
+        description: 'Offline-first farm inventory and feeding checklist',
         theme_color: '#3f8a30',
         background_color: '#fafaf8',
         display: 'standalone',
