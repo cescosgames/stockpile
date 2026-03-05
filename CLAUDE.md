@@ -4,13 +4,17 @@
 Offline-capable inventory and feeding checklist app for a small family farm.
 
 **Roadmap:**
-1. React (Vite) web app — localStorage, single device
-2. Electron wrapper — swap localStorage for electron-store IPC
-3. *(Stretch)* PocketBase backend — self-hosted on local network (e.g. Raspberry Pi), multi-user/multi-device sync via REST/realtime API
+1. React (Vite) web app — localStorage, single device ✓
+2. PWA — installable on any device, still single-device/localStorage ✓
+3. Electron wrapper — swap localStorage for electron-store IPC (desktop packaging)
+4. *(Stretch)* PocketBase backend — self-hosted, enables true multi-device sync
+5. *(Stretch)* PWA goes multi-device — once PocketBase is live, PWA installs on phones/tablets become genuinely useful
 
 ## Stack
 - Vite + React 18 + TypeScript
 - Tailwind CSS (utility classes only)
+- Luxon — timezone-aware date/time
+- vite-plugin-pwa — service worker + installability
 - localStorage via a `useStore` hook (will swap to electron-store IPC at Electron migration)
 
 ## Project Structure
@@ -29,26 +33,37 @@ src/
 - No component should exceed ~150 lines; split if larger
 - Prefer `type` over `interface` for data shapes
 
+## PWA Notes
+- Configured via `vite-plugin-pwa` in `vite.config.ts`
+- Service worker uses `generateSW` with `clientsClaim` + `skipWaiting` for instant updates
+- Caches app shell; localStorage data is unaffected by SW (persists independently)
+- Icons: `public/pwa-192.png` and `public/pwa-512.png` — replace with proper artwork before distribution
+- Theme colour: `#3f8a30` (green-500)
+
 ## Data Models
 ```ts
 type HealthStatus = "Good" | "Fair" | "Poor";
+type Sex = "Male" | "Female" | "Unknown";
 
 type Animal = {
   id: string;
   name: string;
   type: string;        // "Cow" | "Chicken" | "Pig" | free text
-  count: number;
   health: HealthStatus;
+  sex: Sex;
+  birthday: string;    // ISO date — age calculated via Luxon
   notes: string;
   healthLog: { date: string; status: HealthStatus; note: string }[];
+  vaccineLog: { id: string; date: string; vaccine: string; note: string }[];
 };
 
 type FeedItem = {
   id: string;
   name: string;
-  unit: string;
+  unit: "kg" | "lbs";
   qty: number;
-  minQty: number;     // triggers low-stock warning
+  minQty: number;      // triggers low-stock warning
+  scoopSize: number;   // weight per scoop in unit
 };
 
 type Session = "AM" | "PM";
@@ -57,9 +72,16 @@ type FeedingTask = {
   id: string;
   label: string;
   session: Session;
+  feedItemId?: string; // optional — non-feed tasks leave blank
+  scoops?: number;     // checking this task deducts scoops × scoopSize from inventory
 };
 
 type CheckedState = Record<string, boolean>; // key: `${date}-${session}-${taskId}`
+
+type Settings = {
+  farmName: string;
+  timezone: string;    // IANA timezone string
+};
 ```
 
 ## Dev Commands
