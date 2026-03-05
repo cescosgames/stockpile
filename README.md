@@ -1,4 +1,4 @@
-# Farm App
+# Small Farm Tracking App
 
 An open source, offline-first farm management app for small family farms. Track livestock health, manage feed inventory, and run daily feeding checklists — all from a browser or installed as a PWA on any device.
 
