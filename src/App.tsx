@@ -41,6 +41,7 @@ export default function App() {
         <Checklist
           feedingTasks={store.feedingTasks}
           feedItems={store.feedItems}
+          animals={store.animals}
           checkedState={store.checkedState}
           timezone={settings.timezone}
           setChecked={store.setChecked}

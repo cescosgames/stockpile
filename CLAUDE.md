@@ -123,6 +123,9 @@ type Settings = {
 - Build is unsigned — fine for personal use; needs Apple Developer cert + notarization for public distribution.
 - Remaining nice-to-haves: custom app icon, window state persistence, auto-updater.
 
+## Stretch Goals / Known Limitations
+- Per-animal task `animalType` matching is case-insensitive string comparison. Robust solution would be a strict dropdown of existing animal types in the task form — deferred because it requires a managed custom-types system (users need to add/rename types, not just pick from a fixed list).
+
 ## Things to NOT do
 - Do not call localStorage directly — use useStore hook
 - Do not install new dependencies without asking first

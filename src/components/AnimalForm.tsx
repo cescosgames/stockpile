@@ -28,7 +28,8 @@ export default function AnimalForm({ initial, onSave, onClose }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.type.trim()) return;
-    onSave({ ...form, ...(healthChanged ? { healthNote } : {}) });
+    const normalizedType = form.type.trim().replace(/\b\w/g, (c) => c.toUpperCase());
+    onSave({ ...form, type: normalizedType, ...(healthChanged ? { healthNote } : {}) });
     onClose();
   }
 

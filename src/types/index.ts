@@ -38,6 +38,8 @@ export type FeedingTask = {
   session: Session;
   feedItemId?: string; // undefined = no feed consumed (e.g. "collect eggs")
   scoops?: number;
+  perAnimal?: boolean;  // if true, renders one checkbox per animal of animalType
+  animalType?: string;  // e.g. "Cow" — filters animals list for per-animal tasks
 };
 
 export type CheckedState = Record<string, boolean>;

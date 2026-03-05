@@ -52,7 +52,7 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
     <div className="flex flex-col gap-6">
       {/* Stat row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Animals" value={totalAnimals} sub={`${new Set(animals.map((a) => a.type)).size} types`} />
+        <StatCard label="Total Animals" value={totalAnimals} sub={`${new Set(animals.map((a) => a.type.toLowerCase())).size} types`} />
         <StatCard
           label="Low Stock"
           value={lowStock.length}

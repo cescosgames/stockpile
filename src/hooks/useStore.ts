@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Animal, FeedItem, FeedingTask, CheckedState, Settings } from "../types";
 
-const STORE_VERSION = "v7";
+const STORE_VERSION = "v8";
 
 // True when running inside the Electron wrapper — window.electronAPI is
 // injected by electron/preload.cjs via Electron's contextBridge
@@ -37,26 +37,24 @@ if (!isElectron) {
 const TODAY = new Date().toISOString().split("T")[0];
 
 const SEED_ANIMALS: Animal[] = [
-  {
-    id: "a1",
-    name: "Example Animal",
-    type: "Example",
-    health: "Good",
-    sex: "Female",
-    birthday: TODAY,
-    notes: "Note goes here.",
-    healthLog: [],
-    vaccineLog: [{ id: "v1", date: TODAY, vaccine: "Example Vaccine", note: "Example note" }],
-  },
+  { id: "a1", name: "Bessie", type: "Cow",     health: "Good", sex: "Female", birthday: "2021-04-10", notes: "", healthLog: [{ date: TODAY, status: "Good", note: "" }], vaccineLog: [] },
+  { id: "a2", name: "Rosie",  type: "Cow",     health: "Good", sex: "Female", birthday: "2020-06-22", notes: "", healthLog: [{ date: TODAY, status: "Good", note: "" }], vaccineLog: [] },
+  { id: "a3", name: "Daisy",  type: "Cow",     health: "Good", sex: "Female", birthday: "2022-02-14", notes: "", healthLog: [{ date: TODAY, status: "Good", note: "" }], vaccineLog: [] },
+  { id: "a4", name: "Hen #1", type: "Chicken", health: "Good", sex: "Female", birthday: "2023-08-01", notes: "", healthLog: [{ date: TODAY, status: "Good", note: "" }], vaccineLog: [] },
+  { id: "a5", name: "Hen #2", type: "Chicken", health: "Good", sex: "Female", birthday: "2023-08-01", notes: "", healthLog: [{ date: TODAY, status: "Good", note: "" }], vaccineLog: [] },
+  { id: "a6", name: "Hen #3", type: "Chicken", health: "Good", sex: "Female", birthday: "2023-08-01", notes: "", healthLog: [{ date: TODAY, status: "Good", note: "" }], vaccineLog: [] },
 ];
 
 const SEED_FEED: FeedItem[] = [
-  { id: "f1", name: "Example Pellets", unit: "lbs", qty: 5, minQty: 15, scoopSize: 0.5 },
+  { id: "f1", name: "Dairy Pellets", unit: "lbs", qty: 200, minQty: 50,  scoopSize: 2   },
+  { id: "f2", name: "Chicken Feed",  unit: "lbs", qty: 50,  minQty: 15,  scoopSize: 0.5 },
 ];
 
 const SEED_TASKS: FeedingTask[] = [
-  { id: "t1", label: "Feed animals", session: "AM", feedItemId: "f1", scoops: 1 },
-  { id: "t2", label: "Feed animals", session: "PM", feedItemId: "f1", scoops: 1 },
+  { id: "t1", label: "Feed Dairy Cows", session: "AM", feedItemId: "f1", scoops: 2, perAnimal: true, animalType: "Cow"     },
+  { id: "t2", label: "Feed Dairy Cows", session: "PM", feedItemId: "f1", scoops: 2, perAnimal: true, animalType: "Cow"     },
+  { id: "t3", label: "Feed Chickens",   session: "AM", feedItemId: "f2", scoops: 1                                          },
+  { id: "t4", label: "Feed Chickens",   session: "PM", feedItemId: "f2", scoops: 1                                          },
 ];
 
 const CHECKLIST_RETENTION_DAYS = 90;
