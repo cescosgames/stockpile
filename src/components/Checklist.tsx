@@ -24,6 +24,74 @@ function newId() { return Date.now().toString(); }
 type TaskFormState = { label: string; session: Session; feedItemId: string; scoops: string };
 const BLANK_TASK: TaskFormState = { label: "", session: "AM", feedItemId: "", scoops: "" };
 
+type SessionBlockProps = {
+  session: Session;
+  tasks: FeedingTask[];
+  today: string;
+  checkedState: CheckedState;
+  feedItems: FeedItem[];
+  toggle: (task: FeedingTask) => void;
+  deleteTask: (id: string) => void;
+};
+
+function SessionBlock({ session, tasks, today, checkedState, feedItems, toggle, deleteTask }: SessionBlockProps) {
+  const done = tasks.filter((t) => checkedState[checkedKey(today, session, t.id)]).length;
+  const allDone = done === tasks.length && tasks.length > 0;
+
+  return (
+    <section className="bg-surface-raised rounded-card border border-border overflow-hidden">
+      <div className={`px-5 py-3 flex items-center justify-between border-b border-border ${allDone ? "bg-success-subtle" : "bg-surface-sunken"}`}>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-text-primary">{session === "AM" ? "Morning" : "Evening"}</span>
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${allDone ? "bg-success text-white" : "bg-surface text-text-muted border border-border"}`}>
+            {done}/{tasks.length}
+          </span>
+        </div>
+        {allDone && <span className="text-xs text-success font-medium">All done ✓</span>}
+      </div>
+
+      <div className="divide-y divide-border">
+        {tasks.length === 0 && (
+          <p className="px-5 py-4 text-sm text-text-muted">No {session} tasks.</p>
+        )}
+        {tasks.map((task) => {
+          const key = checkedKey(today, session, task.id);
+          const checked = !!checkedState[key];
+          const feedItem = task.feedItemId ? feedItems.find((f) => f.id === task.feedItemId) : null;
+
+          return (
+            <div
+              key={task.id}
+              className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-surface-sunken transition-colors ${checked ? "opacity-60" : ""}`}
+              onClick={() => toggle(task)}
+            >
+              <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${checked ? "bg-success border-success" : "border-border-strong"}`}>
+                {checked && <span className="text-white text-xs font-bold">✓</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className={`text-sm ${checked ? "line-through text-text-muted" : "text-text-primary"}`}>
+                  {task.label}
+                </span>
+                {feedItem && (
+                  <p className="text-xs text-text-muted mt-0.5">
+                    {task.scoops} scoop{task.scoops !== 1 ? "s" : ""} · {((task.scoops ?? 0) * feedItem.scoopSize).toFixed(2)} {feedItem.unit} of {feedItem.name}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+                className="text-text-muted hover:text-danger text-xs px-2 py-1 rounded hover:bg-danger-subtle transition-colors shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function Checklist({ feedingTasks, feedItems, checkedState, timezone, setChecked, setFeedingTasks }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [taskForm, setTaskForm] = useState<TaskFormState>(BLANK_TASK);
@@ -58,69 +126,6 @@ export default function Checklist({ feedingTasks, feedItems, checkedState, timez
     setShowForm(false);
   }
 
-  function SessionBlock({ session, tasks }: { session: Session; tasks: FeedingTask[] }) {
-    const done = tasks.filter((t) => checkedState[checkedKey(today, session, t.id)]).length;
-    const allDone = done === tasks.length && tasks.length > 0;
-
-    return (
-      <section className="bg-surface-raised rounded-card border border-border overflow-hidden">
-        <div className={`px-5 py-3 flex items-center justify-between border-b border-border ${allDone ? "bg-success-subtle" : "bg-surface-sunken"}`}>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-text-primary">{session === "AM" ? "Morning" : "Evening"}</span>
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${allDone ? "bg-success text-white" : "bg-surface text-text-muted border border-border"}`}>
-              {done}/{tasks.length}
-            </span>
-          </div>
-          {allDone && <span className="text-xs text-success font-medium">All done ✓</span>}
-        </div>
-
-        <div className="divide-y divide-border">
-          {tasks.length === 0 && (
-            <p className="px-5 py-4 text-sm text-text-muted">No {session} tasks.</p>
-          )}
-          {tasks.map((task) => {
-            const key = checkedKey(today, session, task.id);
-            const checked = !!checkedState[key];
-            const feedItem = task.feedItemId ? feedItems.find((f) => f.id === task.feedItemId) : null;
-
-            return (
-              <div
-                key={task.id}
-                className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-surface-sunken transition-colors ${checked ? "opacity-60" : ""}`}
-                onClick={() => toggle(task)}
-              >
-                {/* Checkbox */}
-                <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${checked ? "bg-success border-success" : "border-border-strong"}`}>
-                  {checked && <span className="text-white text-xs font-bold">✓</span>}
-                </div>
-
-                {/* Label */}
-                <div className="flex-1 min-w-0">
-                  <span className={`text-sm ${checked ? "line-through text-text-muted" : "text-text-primary"}`}>
-                    {task.label}
-                  </span>
-                  {feedItem && (
-                    <p className="text-xs text-text-muted mt-0.5">
-                      {task.scoops} scoop{task.scoops !== 1 ? "s" : ""} · {((task.scoops ?? 0) * feedItem.scoopSize).toFixed(2)} {feedItem.unit} of {feedItem.name}
-                    </p>
-                  )}
-                </div>
-
-                {/* Delete */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-                  className="text-text-muted hover:text-danger text-xs px-2 py-1 rounded hover:bg-danger-subtle transition-colors shrink-0"
-                >
-                  ✕
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -136,7 +141,6 @@ export default function Checklist({ feedingTasks, feedItems, checkedState, timez
         </button>
       </div>
 
-      {/* Add task form */}
       {showForm && (
         <form onSubmit={addTask} className="bg-surface-raised rounded-card border border-border p-4 flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
@@ -182,8 +186,8 @@ export default function Checklist({ feedingTasks, feedItems, checkedState, timez
         </form>
       )}
 
-      <SessionBlock session="AM" tasks={amTasks} />
-      <SessionBlock session="PM" tasks={pmTasks} />
+      <SessionBlock session="AM" tasks={amTasks} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} deleteTask={deleteTask} />
+      <SessionBlock session="PM" tasks={pmTasks} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} deleteTask={deleteTask} />
     </div>
   );
 }

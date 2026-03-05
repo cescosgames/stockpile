@@ -51,7 +51,10 @@ export default function App() {
       {showSettings && (
         <SettingsModal
           settings={settings}
+          animals={store.animals}
           onSave={setSettings}
+          onImportAnimals={store.setAnimals}
+          onWipe={store.wipeData}
           onClose={() => setShowSettings(false)}
         />
       )}

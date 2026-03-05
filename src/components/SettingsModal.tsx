@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DateTime } from "luxon";
-import type { Settings } from "../types";
+import type { Settings, Animal } from "../types";
 
 type Props = {
   settings: Settings;
+  animals: Animal[];
   onSave: (s: Settings) => void;
+  onImportAnimals: (animals: Animal[]) => void;
+  onWipe: () => void;
   onClose: () => void;
 };
 
@@ -41,9 +44,12 @@ const TIMEZONES = [
   { label: "Pacific/Auckland (NZST)",       value: "Pacific/Auckland" },
 ];
 
-export default function SettingsModal({ settings, onSave, onClose }: Props) {
+export default function SettingsModal({ settings, animals, onSave, onImportAnimals, onWipe, onClose }: Props) {
   const [form, setForm] = useState(settings);
   const [clock, setClock] = useState("");
+  const [confirmWipe, setConfirmWipe] = useState(false);
+  const [importError, setImportError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     function tick() {
@@ -61,9 +67,71 @@ export default function SettingsModal({ settings, onSave, onClose }: Props) {
     onClose();
   }
 
+  function handleExport() {
+    const payload = {
+      _stockpile: true,
+      exportedAt: new Date().toISOString(),
+      animals,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stockpile-animals-${new Date().toISOString().split("T")[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function isValidAnimal(a: unknown): a is Animal {
+    if (typeof a !== "object" || a === null) return false;
+    const o = a as Record<string, unknown>;
+    return (
+      typeof o.id === "string" &&
+      typeof o.name === "string" &&
+      typeof o.type === "string" &&
+      ["Good", "Fair", "Poor"].includes(o.health as string) &&
+      ["Male", "Female", "Unknown"].includes(o.sex as string) &&
+      typeof o.birthday === "string" &&
+      typeof o.notes === "string" &&
+      Array.isArray(o.healthLog) &&
+      Array.isArray(o.vaccineLog)
+    );
+  }
+
+  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    setImportError("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string);
+        if (data._stockpile !== true || !Array.isArray(data.animals)) {
+          setImportError("This file wasn't exported from Stockpile. No changes made.");
+          return;
+        }
+        if (!data.animals.every(isValidAnimal)) {
+          setImportError("File contains invalid animal data. No changes made.");
+          return;
+        }
+        onImportAnimals(data.animals);
+        onClose();
+      } catch {
+        setImportError("Couldn't read the file. Make sure it's a valid Stockpile export.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  function handleWipeConfirm() {
+    onWipe();
+    onClose();
+  }
+
   return (
     <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface-raised rounded-card border border-border w-full max-w-md shadow-xl">
+      <div className="bg-surface-raised rounded-card border border-border w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto themed-scroll">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-base font-semibold text-text-primary">Settings</h2>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary text-xl leading-none">×</button>
@@ -107,6 +175,62 @@ export default function SettingsModal({ settings, onSave, onClose }: Props) {
             </button>
           </div>
         </form>
+
+        {/* Data management */}
+        <div className="px-6 pb-6 flex flex-col gap-4 border-t border-border pt-5">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium text-text-secondary uppercase tracking-wide">Animal Data</p>
+            <div className="relative group">
+              <span className="w-4 h-4 rounded-full border border-text-muted text-text-muted text-[10px] font-bold flex items-center justify-center cursor-help select-none">?</span>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-stone-800 text-white text-xs rounded-md px-3 py-2 hidden group-hover:block z-10 leading-relaxed">
+                Regularly export your animal records as a backup. If your data is ever lost or reset, you can restore it from an export file.
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-stone-800" />
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={handleExport}
+              className="flex-1 py-2 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong"
+            >
+              Export Animals
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 py-2 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong"
+            >
+              Import Animals
+            </button>
+            <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+          </div>
+          {importError && <p className="text-xs text-red-600">{importError}</p>}
+          <p className="text-xs text-text-muted">Import replaces your current animals with the contents of a Stockpile export file.</p>
+        </div>
+
+        {/* Danger zone */}
+        <div className="px-6 pb-6 flex flex-col gap-3 border-t border-border pt-5">
+          <p className="text-xs font-medium text-text-secondary uppercase tracking-wide">Danger Zone</p>
+          {!confirmWipe ? (
+            <button
+              onClick={() => setConfirmWipe(true)}
+              className="py-2 rounded-btn border border-red-300 text-sm text-red-600 hover:bg-red-50"
+            >
+              Wipe All Data
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-red-600">This will permanently delete all animals, feed items, and tasks. Are you sure?</p>
+              <div className="flex gap-3">
+                <button onClick={() => setConfirmWipe(false)} className="flex-1 py-2 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">
+                  Cancel
+                </button>
+                <button onClick={handleWipeConfirm} className="flex-1 py-2 rounded-btn bg-red-600 text-white text-sm font-medium hover:bg-red-700">
+                  Yes, Wipe Everything
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

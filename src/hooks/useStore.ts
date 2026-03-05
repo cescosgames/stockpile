@@ -208,5 +208,12 @@ export function useStore() {
     }
   }
 
-  return { animals, feedItems, feedingTasks, checkedState, settings, setAnimals, setFeedItems, setFeedingTasks, setChecked, setSettings };
+  function wipeData() {
+    setAnimalsState([]);
+    setFeedItemsState([]);
+    setFeedingTasksState([]);
+    setCheckedStateState({});
+  }
+
+  return { animals, feedItems, feedingTasks, checkedState, settings, setAnimals, setFeedItems, setFeedingTasks, setChecked, setSettings, wipeData };
 }
