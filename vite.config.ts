@@ -4,6 +4,10 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // In Electron production builds, the app loads from file:// — relative paths
+  // are required. VITE_ELECTRON is set by the electron:build script.
+  // For web/PWA builds this is unset, so base stays as '/' (default).
+  base: process.env.VITE_ELECTRON ? "./" : "/",
   plugins: [
     react(),
     tailwindcss(),

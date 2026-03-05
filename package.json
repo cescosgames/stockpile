@@ -3,14 +3,39 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "electron .",
+    "electron:build": "VITE_ELECTRON=true tsc -b && VITE_ELECTRON=true vite build && electron-builder"
+  },
+  "build": {
+    "appId": "com.stockpile.app",
+    "productName": "Stockpile",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "public/pwa-512.png",
+      "public/favicon_io/favicon.ico",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "public/pwa-512.png"
+    },
+    "win": {
+      "icon": "public/favicon_io/favicon.ico"
+    }
   },
   "dependencies": {
     "@types/luxon": "^3.7.1",
+    "electron-store": "^11.0.2",
     "luxon": "^3.7.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
@@ -24,6 +49,8 @@
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "@vitejs/plugin-react": "^5.1.1",
+    "electron": "^40.7.0",
+    "electron-builder": "^26.8.1",
     "eslint": "^9.39.3",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

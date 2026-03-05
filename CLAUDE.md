@@ -7,7 +7,7 @@ Tracks livestock, feed inventory, and daily feeding checklists.
 **Roadmap:**
 1. React (Vite) web app — localStorage, single device ✓
 2. PWA — installable on any device, still single-device/localStorage ✓
-3. Electron wrapper — swap localStorage for electron-store IPC (desktop packaging)
+3. Electron wrapper — swap localStorage for electron-store IPC (desktop packaging) ✓
 4. *(Stretch)* PocketBase backend — self-hosted, enables true multi-device sync
 5. *(Stretch)* PWA goes multi-device — once PocketBase is live, PWA installs on phones/tablets become genuinely useful
 
@@ -16,7 +16,8 @@ Tracks livestock, feed inventory, and daily feeding checklists.
 - Tailwind CSS (utility classes only)
 - Luxon — timezone-aware date/time
 - vite-plugin-pwa — service worker + installability
-- localStorage via a `useStore` hook (will swap to electron-store IPC at Electron migration)
+- Electron + electron-store — desktop wrapper (done)
+- `useStore` hook — dual-backend: localStorage (PWA) or electron-store IPC (Electron), detected via `window.electronAPI`
 
 ## Project Structure
 ```
@@ -32,11 +33,15 @@ src/
     FeedForm.tsx        # Add/edit feed item modal
     SettingsModal.tsx   # Farm name + timezone (IANA), live clock preview
   hooks/
-    useStore.ts         # ALL persistence — localStorage, seed data, store versioning, checkedState pruning
+    useStore.ts         # ALL persistence — dual-backend (localStorage / electron-store IPC),
+                        # seed data, store versioning, checkedState pruning, debounced Electron saves
   types/
-    index.ts            # All shared TypeScript types
+    index.ts            # All shared TypeScript types + window.electronAPI global declaration
   App.tsx               # Tab state, settings modal state, wires store → components
   index.css             # Tailwind @theme (farm palette) + base resets
+electron/
+  main.js               # Main process — BrowserWindow, IPC handlers (store:get/store:set), menu, DevTools in dev
+  preload.cjs           # Context bridge — exposes window.electronAPI.get/set to renderer
 ```
 
 ## Key Conventions
@@ -101,9 +106,22 @@ type Settings = {
 `STORE_VERSION` constant in `useStore.ts` (currently `"v7"`). Bump it whenever the data shape changes — on load it clears all localStorage keys and reseeds. `checkedState` is also pruned to 90 days on every load to keep storage lean.
 
 ## Dev Commands
-- `npm run dev` — start Vite dev server
-- `npm run build` — production build
+- `npm run dev` — start Vite dev server (browser / PWA)
+- `npm run build` — production PWA build
 - `npm run lint` — ESLint
+- `npm run electron:dev` — launch Electron (requires `npm run dev` running first)
+- `npm run electron:build` — production Electron build → `dist-electron/Stockpile-*.dmg`
+
+## Electron Notes
+- `electron/main.js` — ESM. Uses `import.meta.url` for `__dirname`. `app.isPackaged` = false in dev, true when built.
+- `electron/preload.cjs` — must be CommonJS (`.cjs`); preload scripts don't support ESM.
+- `window.electronAPI` present only in Electron renderer; `useStore.ts` detects this to switch backends.
+- IPC channels: `store:get` and `store:set` (handled in main.js via electron-store).
+- Electron saves are debounced 400ms to avoid per-keystroke IPC writes.
+- Dev data location (macOS): `~/Library/Application Support/Electron/config.json`
+- Prod data location (macOS): `~/Library/Application Support/Stockpile/config.json`
+- Build is unsigned — fine for personal use; needs Apple Developer cert + notarization for public distribution.
+- Remaining nice-to-haves: custom app icon, window state persistence, auto-updater.
 
 ## Things to NOT do
 - Do not call localStorage directly — use useStore hook
@@ -111,18 +129,14 @@ type Settings = {
 - Do not add a router; this is a single-page app with tab-based navigation
 - Do not use any UI component library (shadcn, MUI, etc.) — custom styled components only
 
-## Electron Migration Notes (future)
-When migrating, the only file that changes is `src/hooks/useStore.ts`.
-Replace localStorage calls with `window.electronAPI.*` IPC calls.
-Do not scatter any persistence logic outside of that hook.
+## PocketBase Migration Notes (next milestone)
 
-## PocketBase Migration Notes (stretch goal)
 Self-hosted PocketBase instance on local network (Raspberry Pi or similar).
-When migrating from Electron, `src/hooks/useStore.ts` is again the only file that changes.
-Replace electron-store IPC calls with PocketBase SDK calls (`pb.collection(...).getList/create/update/delete`).
-PocketBase provides real-time subscriptions — use these to replace any polling.
-Auth: use PocketBase's built-in auth; store the auth token via the SDK (it handles it automatically).
-Offline resilience: keep a local cache layer in `useStore.ts` so the app degrades gracefully when off-network.
+`src/hooks/useStore.ts` is again the only file that changes — replace electron-store IPC with PocketBase SDK calls.
+PocketBase provides real-time subscriptions (SSE) — use these instead of polling.
+Auth: PocketBase built-in auth; SDK handles token storage automatically.
+Offline resilience: keep a local cache in `useStore.ts` so the app degrades gracefully when off-network.
+Both PWA and Electron clients point at the same PocketBase instance — same data, real-time sync across devices.
 
 ## Reference Files
 - `@docs/architecture.md` — overall app structure and migration plan (create as needed)

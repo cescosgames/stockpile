@@ -48,3 +48,13 @@ export type Settings = {
 };
 
 export type Tab = "dashboard" | "animals" | "feed" | "checklist";
+
+// Exposed by electron/preload.cjs via contextBridge — only present when running in Electron
+declare global {
+  interface Window {
+    electronAPI?: {
+      get: (key: string) => Promise<unknown>;
+      set: (key: string, value: unknown) => Promise<void>;
+    };
+  }
+}
