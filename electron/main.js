@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, session } from "electron";
 import Store from "electron-store";
 import { fileURLToPath } from "url";
 import path from "path";
@@ -70,6 +70,28 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // Set Content-Security-Policy on all responses.
+  // Dev allows unsafe-eval (required by Vite HMR/sourcemaps) and localhost
+  // connections. Production is strict — no eval, no external origins.
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const csp = isDev
+      ? [
+          "default-src 'self' http://localhost:5173",
+          "script-src 'self' 'unsafe-eval' http://localhost:5173",
+          "style-src 'self' 'unsafe-inline'",
+          "connect-src 'self' ws://localhost:5173 http://localhost:5173",
+        ].join("; ")
+      : [
+          "default-src 'self'",
+          "script-src 'self'",
+          "style-src 'self' 'unsafe-inline'",
+          "connect-src 'self'",
+        ].join("; ");
+    callback({
+      responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": [csp] },
+    });
+  });
+
   if (process.platform === "darwin") {
     app.dock.setIcon(path.join(__dirname, "../public/pwa-512.png"));
   }

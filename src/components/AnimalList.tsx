@@ -95,7 +95,7 @@ export default function AnimalList({ animals, setAnimals }: Props) {
       </div>
 
       {animals.length === 0 && (
-        <p className="text-sm text-text-muted py-8 text-center">No animals yet. Add your first one.</p>
+        <p className="text-sm text-text-muted py-8 text-center">No animals yet. Try adding one!</p>
       )}
 
       {Object.entries(groups).map(([key, group]) => {

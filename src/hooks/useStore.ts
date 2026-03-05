@@ -318,6 +318,7 @@ export function useStore() {
     setFeedItemsState([]);
     setFeedingTasksState([]);
     setWeeklyTasksState([]);
+    setNotesState([]);
     setCheckedStateState({});
   }
 
