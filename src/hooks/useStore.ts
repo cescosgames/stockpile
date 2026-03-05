@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import type { Animal, FeedItem, FeedingTask, CheckedState, Settings } from "../types";
+import type { Animal, FeedItem, FeedingTask, WeeklyTask, Note, CheckedState, Settings } from "../types";
 
-const STORE_VERSION = "v10";
+const STORE_VERSION = "v12";
 
 // True when running inside the Electron wrapper — window.electronAPI is
 // injected by electron/preload.cjs via Electron's contextBridge
@@ -108,6 +108,19 @@ const SEED_FEED: FeedItem[] = [
   { id: "f4", name: "Goat Mix",      unit: "kg",  qty: 40,  minQty: 10,  maxQty: 80,  scoopSize: 1   },
 ];
 
+const SEED_NOTES: Note[] = [
+  { id: "n1", date: "2026-03-01", text: "Ordered extra Chicken Feed — should arrive by end of week. Running low." },
+  { id: "n2", date: "2026-03-04", text: "Hen #3 isolated from flock. Vet visit scheduled for Friday morning." },
+  { id: "n3", date: TODAY, text: "Nanny (goat) expecting kids in April. Set up separate pen by end of month." },
+];
+
+const SEED_WEEKLY: WeeklyTask[] = [
+  { id: "w1", label: "Replace bedding" },
+  { id: "w2", label: "Deep clean water troughs" },
+  { id: "w3", label: "Check fencing for damage" },
+  { id: "w4", label: "Scrub feed buckets" },
+];
+
 const SEED_TASKS: FeedingTask[] = [
   { id: "t1",  label: "Feed Dairy Cows", session: "AM", feedItemId: "f1", scoops: 2, perAnimal: true, animalType: "Cow" },
   { id: "t2",  label: "Feed Dairy Cows", session: "PM", feedItemId: "f1", scoops: 2, perAnimal: true, animalType: "Cow" },
@@ -153,6 +166,12 @@ export function useStore() {
   const [feedingTasks, setFeedingTasksState] = useState<FeedingTask[]>(() =>
     isElectron ? SEED_TASKS : load("feedingTasks", SEED_TASKS)
   );
+  const [weeklyTasks, setWeeklyTasksState] = useState<WeeklyTask[]>(() =>
+    isElectron ? SEED_WEEKLY : load("weeklyTasks", SEED_WEEKLY)
+  );
+  const [notes, setNotesState] = useState<Note[]>(() =>
+    isElectron ? SEED_NOTES : load("notes", SEED_NOTES)
+  );
   const [checkedState, setCheckedStateState] = useState<CheckedState>(() =>
     isElectron ? {} : pruneCheckedState(load("checkedState", {}))
   );
@@ -184,12 +203,16 @@ export function useStore() {
         api.get("animals"),
         api.get("feedItems"),
         api.get("feedingTasks"),
+        api.get("weeklyTasks"),
+        api.get("notes"),
         api.get("checkedState"),
         api.get("settings"),
-      ]).then(([a, f, t, c, s]) => {
+      ]).then(([a, f, t, w, n, c, s]) => {
         if (a) setAnimalsState(a as Animal[]);
         if (f) setFeedItemsState(f as FeedItem[]);
         if (t) setFeedingTasksState(t as FeedingTask[]);
+        if (w) setWeeklyTasksState(w as WeeklyTask[]);
+        if (n) setNotesState(n as Note[]);
         if (c) setCheckedStateState(pruneCheckedState(c as CheckedState));
         if (s) setSettingsState(s as Settings);
         setElectronReady(true);
@@ -233,6 +256,24 @@ export function useStore() {
   useEffect(() => {
     if (!electronReady) return;
     if (isElectron) {
+      const t = setTimeout(() => window.electronAPI!.set("weeklyTasks", weeklyTasks), DEBOUNCE_MS);
+      return () => clearTimeout(t);
+    }
+    save("weeklyTasks", weeklyTasks);
+  }, [weeklyTasks, electronReady]);
+
+  useEffect(() => {
+    if (!electronReady) return;
+    if (isElectron) {
+      const t = setTimeout(() => window.electronAPI!.set("notes", notes), DEBOUNCE_MS);
+      return () => clearTimeout(t);
+    }
+    save("notes", notes);
+  }, [notes, electronReady]);
+
+  useEffect(() => {
+    if (!electronReady) return;
+    if (isElectron) {
       const t = setTimeout(() => window.electronAPI!.set("checkedState", checkedState), DEBOUNCE_MS);
       return () => clearTimeout(t);
     }
@@ -251,6 +292,8 @@ export function useStore() {
   function setAnimals(next: Animal[]) { setAnimalsState(next); }
   function setFeedItems(next: FeedItem[]) { setFeedItemsState(next); }
   function setFeedingTasks(next: FeedingTask[]) { setFeedingTasksState(next); }
+  function setWeeklyTasks(next: WeeklyTask[]) { setWeeklyTasksState(next); }
+  function setNotes(next: Note[]) { setNotesState(next); }
   function setSettings(next: Settings) { setSettingsState(next); }
 
   function setChecked(key: string, value: boolean, task?: FeedingTask) {
@@ -274,8 +317,9 @@ export function useStore() {
     setAnimalsState([]);
     setFeedItemsState([]);
     setFeedingTasksState([]);
+    setWeeklyTasksState([]);
     setCheckedStateState({});
   }
 
-  return { animals, feedItems, feedingTasks, checkedState, settings, setAnimals, setFeedItems, setFeedingTasks, setChecked, setSettings, wipeData };
+  return { animals, feedItems, feedingTasks, weeklyTasks, notes, checkedState, settings, setAnimals, setFeedItems, setFeedingTasks, setWeeklyTasks, setNotes, setChecked, setSettings, wipeData };
 }

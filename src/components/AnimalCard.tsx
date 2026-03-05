@@ -73,10 +73,10 @@ export default function AnimalCard({ animal, onEdit, onDelete, onAddVaccine, onD
         </div>
 
         <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <button onClick={onEdit} className="text-xs text-text-muted hover:text-accent px-3 py-1.5 rounded hover:bg-accent-subtle transition-colors">
+          <button onClick={onEdit} className="text-sm text-text-muted hover:text-accent px-4 py-2 rounded hover:bg-accent-subtle transition-colors">
             Edit
           </button>
-          <button onClick={onDelete} className="text-xs text-text-muted hover:text-danger px-3 py-1.5 rounded hover:bg-danger-subtle transition-colors">
+          <button onClick={onDelete} className="text-sm text-text-muted hover:text-danger px-4 py-2 rounded hover:bg-danger-subtle transition-colors">
             Retire
           </button>
         </div>
@@ -185,10 +185,10 @@ export default function AnimalCard({ animal, onEdit, onDelete, onAddVaccine, onD
                   value={vaxForm.note} onChange={(e) => setVaxForm((p) => ({ ...p, note: e.target.value }))}
                 />
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setShowVaxForm(false)} className="flex-1 py-1.5 text-xs border border-border rounded text-text-secondary hover:border-border-strong">
+                  <button type="button" onClick={() => setShowVaxForm(false)} className="flex-1 py-2 text-sm border border-border rounded text-text-secondary hover:border-border-strong">
                     Cancel
                   </button>
-                  <button type="submit" className="flex-1 py-1.5 text-xs bg-accent text-white rounded font-medium hover:bg-accent-hover">
+                  <button type="submit" className="flex-1 py-2 text-sm bg-accent text-white rounded font-medium hover:bg-accent-hover">
                     Save
                   </button>
                 </div>

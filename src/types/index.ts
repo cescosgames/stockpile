@@ -43,6 +43,17 @@ export type FeedingTask = {
   animalType?: string;  // e.g. "Cow" — filters animals list for per-animal tasks
 };
 
+export type WeeklyTask = {
+  id: string;
+  label: string;
+};
+
+export type Note = {
+  id: string;
+  date: string; // ISO date
+  text: string;
+};
+
 export type CheckedState = Record<string, boolean>;
 
 export type Settings = {

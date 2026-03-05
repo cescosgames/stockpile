@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { DateTime } from "luxon";
-import type { Animal, FeedItem, FeedingTask, CheckedState, HealthStatus } from "../types";
+import type { Animal, FeedItem, FeedingTask, Note, CheckedState, HealthStatus } from "../types";
 
 type Props = {
   animals: Animal[];
@@ -7,6 +8,8 @@ type Props = {
   feedingTasks: FeedingTask[];
   checkedState: CheckedState;
   timezone: string;
+  notes: Note[];
+  setNotes: (notes: Note[]) => void;
 };
 
 const HEALTH_STYLE: Record<HealthStatus, string> = {
@@ -19,8 +22,12 @@ function todayKey(tz: string) {
   return DateTime.now().setZone(tz).toISODate() ?? "";
 }
 
-function checklistKey(date: string, session: string, taskId: string) {
-  return `${date}-${session}-${taskId}`;
+function isTaskDone(task: FeedingTask, animals: Animal[], date: string, checkedState: CheckedState): boolean {
+  if (task.perAnimal && task.animalType) {
+    const group = animals.filter((a) => a.type.toLowerCase() === task.animalType!.toLowerCase());
+    return group.length > 0 && group.every((a) => !!checkedState[`${date}-${task.session}-${task.id}-${a.id}`]);
+  }
+  return !!checkedState[`${date}-${task.session}-${task.id}`];
 }
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: string }) {
@@ -33,15 +40,17 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string 
   );
 }
 
-export default function Dashboard({ animals, feedItems, feedingTasks, checkedState, timezone }: Props) {
+export default function Dashboard({ animals, feedItems, feedingTasks, checkedState, timezone, notes, setNotes }: Props) {
+  const [showNoteForm, setShowNoteForm] = useState(false);
+  const [noteText, setNoteText] = useState("");
   const today = todayKey(timezone);
   const totalAnimals = animals.length;
   const lowStock = feedItems.filter((f) => f.qty <= f.minQty);
 
   const amTasks = feedingTasks.filter((t) => t.session === "AM");
   const pmTasks = feedingTasks.filter((t) => t.session === "PM");
-  const amDone = amTasks.filter((t) => checkedState[checklistKey(today, "AM", t.id)]).length;
-  const pmDone = pmTasks.filter((t) => checkedState[checklistKey(today, "PM", t.id)]).length;
+  const amDone = amTasks.filter((t) => isTaskDone(t, animals, today, checkedState)).length;
+  const pmDone = pmTasks.filter((t) => isTaskDone(t, animals, today, checkedState)).length;
 
   const healthCounts = animals.reduce(
     (acc, a) => { acc[a.health] = (acc[a.health] ?? 0) + 1; return acc; },
@@ -118,6 +127,60 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
           </div>
         </section>
       </div>
+
+      {/* Farm Notes */}
+      <section className="bg-surface-raised rounded-card border border-border p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-text-primary">Farm Notes</h2>
+          <button
+            onClick={() => setShowNoteForm((v) => !v)}
+            className="text-xs text-accent hover:text-accent-hover font-medium"
+          >
+            + New Note
+          </button>
+        </div>
+
+        {showNoteForm && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!noteText.trim()) return;
+              const today = DateTime.now().setZone(timezone).toISODate() ?? "";
+              setNotes([{ id: Date.now().toString(), date: today, text: noteText.trim() }, ...notes]);
+              setNoteText("");
+              setShowNoteForm(false);
+            }}
+            className="mb-4 flex flex-col gap-2"
+          >
+            <textarea
+              rows={3}
+              autoFocus
+              className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent resize-none"
+              placeholder="Write a note..."
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => { setShowNoteForm(false); setNoteText(""); }} className="flex-1 py-1.5 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
+              <button type="submit" className="flex-1 py-1.5 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">Save</button>
+            </div>
+          </form>
+        )}
+
+        <div className="flex flex-col gap-3 max-h-64 overflow-y-auto themed-scroll">
+          {notes.length === 0 && <p className="text-sm text-text-muted">No notes yet.</p>}
+          {notes.map((note) => (
+            <div key={note.id} className="flex gap-3 bg-surface-sunken rounded px-3 py-2.5">
+              <span className="text-xs text-text-muted w-24 shrink-0 pt-0.5">{DateTime.fromISO(note.date).toFormat("dd MMM yyyy")}</span>
+              <p className="text-sm text-text-primary flex-1 whitespace-pre-wrap">{note.text}</p>
+              <button
+                onClick={() => setNotes(notes.filter((n) => n.id !== note.id))}
+                className="text-text-muted hover:text-danger transition-colors shrink-0 text-xs"
+              >✕</button>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

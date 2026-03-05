@@ -69,7 +69,7 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
               key={id}
               onClick={() => onTabChange(id)}
               className={[
-                "flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors",
+                "flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-colors",
                 isActive
                   ? "border-accent text-accent"
                   : "border-transparent text-text-secondary hover:text-text-primary hover:border-border-strong",

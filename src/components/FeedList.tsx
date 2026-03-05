@@ -69,7 +69,7 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
         </div>
         <button
           onClick={() => { setEditing(null); setShowForm(true); }}
-          className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-btn hover:bg-accent-hover transition-colors"
+          className="bg-accent text-white text-sm font-medium px-5 py-3 rounded-btn hover:bg-accent-hover transition-colors"
         >
           + Add Item
         </button>
@@ -107,13 +107,13 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
                   </div>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <button onClick={() => { setRestocking(f.id); setRestockQty(""); }} className="text-xs text-text-muted hover:text-success px-3 py-1.5 rounded hover:bg-success-subtle transition-colors">
+                  <button onClick={() => { setRestocking(f.id); setRestockQty(""); }} className="text-sm text-text-muted hover:text-success px-4 py-2 rounded hover:bg-success-subtle transition-colors">
                     + Stock
                   </button>
-                  <button onClick={() => { setEditing(f); setShowForm(true); }} className="text-xs text-text-muted hover:text-accent px-3 py-1.5 rounded hover:bg-accent-subtle transition-colors">
+                  <button onClick={() => { setEditing(f); setShowForm(true); }} className="text-sm text-text-muted hover:text-accent px-4 py-2 rounded hover:bg-accent-subtle transition-colors">
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(f.id)} className="text-xs text-text-muted hover:text-danger px-3 py-1.5 rounded hover:bg-danger-subtle transition-colors">
+                  <button onClick={() => handleDelete(f.id)} className="text-sm text-text-muted hover:text-danger px-4 py-2 rounded hover:bg-danger-subtle transition-colors">
                     Delete
                   </button>
                 </div>

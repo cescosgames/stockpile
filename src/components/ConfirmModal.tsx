@@ -15,13 +15,13 @@ export default function ConfirmModal({ message, confirmLabel = "Confirm", onConf
         <div className="flex gap-3 px-6 pb-5">
           <button
             onClick={onCancel}
-            className="flex-1 py-2 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong transition-colors"
+            className="flex-1 py-3 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2 rounded-btn bg-danger text-white text-sm font-medium hover:bg-red-700 transition-colors"
+            className="flex-1 py-3 rounded-btn bg-danger text-white text-sm font-medium hover:bg-red-700 transition-colors"
           >
             {confirmLabel}
           </button>

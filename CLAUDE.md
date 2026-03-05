@@ -24,21 +24,22 @@ Tracks livestock, feed inventory, and daily feeding checklists.
 src/
   components/
     Layout.tsx          # App shell — header (Stockpile wordmark, farm name, clock, gear), tab nav
-    Dashboard.tsx       # Overview: stat cards, animal health, feed inventory bars
-    AnimalList.tsx      # Animals tab — grouped by type, CRUD
-    AnimalCard.tsx      # Individual animal — expandable (sex, age, birthday, notes, vaccine log)
-    AnimalForm.tsx      # Add/edit animal modal
-    Checklist.tsx       # AM/PM task lists — checking deducts feed inventory
-    FeedList.tsx        # Feed inventory tab — stock bars, days remaining, inline restock
+    Dashboard.tsx       # Overview: stat cards, animal health, feed inventory bars, farm notes
+    AnimalList.tsx      # Animals tab — collapsible groups by type, CRUD
+    AnimalCard.tsx      # Individual animal — expandable (sex, age, birthday, notes, health log, vaccine log)
+    AnimalForm.tsx      # Add/edit animal modal; health status change triggers optional note
+    Checklist.tsx       # AM/PM/Weekly task lists — per-animal or communal, checking deducts feed
+    FeedList.tsx        # Feed inventory tab — stock bars, days remaining, inline restock, tooltip
     FeedForm.tsx        # Add/edit feed item modal
-    SettingsModal.tsx   # Farm name + timezone (IANA), live clock preview
+    ConfirmModal.tsx    # Shared confirmation modal (replaces native confirm())
+    SettingsModal.tsx   # Farm name + timezone (IANA), export/import/wipe animal data
   hooks/
     useStore.ts         # ALL persistence — dual-backend (localStorage / electron-store IPC),
                         # seed data, store versioning, checkedState pruning, debounced Electron saves
   types/
     index.ts            # All shared TypeScript types + window.electronAPI global declaration
-  App.tsx               # Tab state, settings modal state, wires store → components
-  index.css             # Tailwind @theme (farm palette) + base resets
+  App.tsx               # Tab state, settings modal; all tabs stay mounted (hidden class) to preserve local state
+  index.css             # Tailwind @theme (farm palette) + base resets + .themed-scroll
 electron/
   main.js               # Main process — BrowserWindow, IPC handlers (store:get/store:set), menu, DevTools in dev
   preload.cjs           # Context bridge — exposes window.electronAPI.get/set to renderer
@@ -66,7 +67,7 @@ type Sex = "Male" | "Female" | "Unknown";
 type Animal = {
   id: string;
   name: string;
-  type: string;        // "Cow" | "Chicken" | "Pig" | free text
+  type: string;        // free text, normalized to title case on save
   health: HealthStatus;
   sex: Sex;
   birthday: string;    // ISO date — age calculated via Luxon
@@ -81,6 +82,7 @@ type FeedItem = {
   unit: "kg" | "lbs";
   qty: number;
   minQty: number;      // triggers low-stock warning
+  maxQty: number;      // target/full stock — sets bar length
   scoopSize: number;   // weight per scoop in unit
 };
 
@@ -91,10 +93,27 @@ type FeedingTask = {
   label: string;
   session: Session;
   feedItemId?: string; // optional — non-feed tasks leave blank
-  scoops?: number;     // checking this task deducts scoops × scoopSize from inventory
+  scoops?: number;     // checking deducts scoops × scoopSize from inventory
+  perAnimal?: boolean; // if true, renders one checkbox per animal of animalType
+  animalType?: string; // case-insensitive match against Animal.type
 };
 
-type CheckedState = Record<string, boolean>; // key: `${date}-${session}-${taskId}`
+type WeeklyTask = {
+  id: string;
+  label: string;       // simple label — no feed/session/per-animal
+};
+
+type Note = {
+  id: string;
+  date: string;        // ISO date
+  text: string;
+};
+
+// CheckedState keys:
+//   daily communal:   `${date}-${session}-${taskId}`
+//   daily per-animal: `${date}-${session}-${taskId}-${animalId}`
+//   weekly:           `${mondayDate}-week-${taskId}`
+type CheckedState = Record<string, boolean>;
 
 type Settings = {
   farmName: string;
@@ -103,7 +122,7 @@ type Settings = {
 ```
 
 ## Store Versioning
-`STORE_VERSION` constant in `useStore.ts` (currently `"v7"`). Bump it whenever the data shape changes — on load it clears all localStorage keys and reseeds. `checkedState` is also pruned to 90 days on every load to keep storage lean.
+`STORE_VERSION` constant in `useStore.ts` (currently `"v12"`). Bump it whenever the data shape changes — on load it clears all localStorage keys and reseeds. `checkedState` is also pruned to 90 days on every load to keep storage lean.
 
 ## Dev Commands
 - `npm run dev` — start Vite dev server (browser / PWA)
@@ -125,6 +144,8 @@ type Settings = {
 
 ## Stretch Goals / Known Limitations
 - Per-animal task `animalType` matching is case-insensitive string comparison. Robust solution would be a strict dropdown of existing animal types in the task form — deferred because it requires a managed custom-types system (users need to add/rename types, not just pick from a fixed list).
+- Tab state is preserved across switches by keeping all tab components mounted with `hidden` CSS class (not conditional rendering). This preserves collapsed state, scroll position, and open forms.
+- Weekly tasks reset at midnight Monday (Luxon `startOf("week")` = ISO week = Monday). The checked key prefix is the Monday ISO date, so the existing 90-day pruning handles cleanup automatically.
 
 ## Things to NOT do
 - Do not call localStorage directly — use useStore hook

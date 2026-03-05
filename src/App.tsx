@@ -22,32 +22,36 @@ export default function App() {
       onTabChange={setTab}
       onOpenSettings={() => setShowSettings(true)}
     >
-      {tab === "dashboard" && (
+      <div className={tab === "dashboard" ? "" : "hidden"}>
         <Dashboard
           animals={store.animals}
           feedItems={store.feedItems}
           feedingTasks={store.feedingTasks}
           checkedState={store.checkedState}
           timezone={settings.timezone}
+          notes={store.notes}
+          setNotes={store.setNotes}
         />
-      )}
-      {tab === "animals" && (
+      </div>
+      <div className={tab === "animals" ? "" : "hidden"}>
         <AnimalList animals={store.animals} setAnimals={store.setAnimals} />
-      )}
-      {tab === "feed" && (
+      </div>
+      <div className={tab === "feed" ? "" : "hidden"}>
         <FeedList feedItems={store.feedItems} feedingTasks={store.feedingTasks} setFeedItems={store.setFeedItems} />
-      )}
-      {tab === "checklist" && (
+      </div>
+      <div className={tab === "checklist" ? "" : "hidden"}>
         <Checklist
           feedingTasks={store.feedingTasks}
+          weeklyTasks={store.weeklyTasks}
           feedItems={store.feedItems}
           animals={store.animals}
           checkedState={store.checkedState}
           timezone={settings.timezone}
           setChecked={store.setChecked}
           setFeedingTasks={store.setFeedingTasks}
+          setWeeklyTasks={store.setWeeklyTasks}
         />
-      )}
+      </div>
 
       {showSettings && (
         <SettingsModal

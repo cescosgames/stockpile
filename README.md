@@ -8,11 +8,11 @@ Built to be simple enough to use in a barn and hackable enough to adapt to your 
 
 ## Features
 
-- **Animals** — Individual animal records with health status, sex, birthday (age auto-calculated), notes, and vaccine history. Grouped by type.
-- **Feed Inventory** — Track stock in kg or lbs with per-item scoop sizes. Low-stock warnings and days-remaining estimates based on daily task usage.
-- **Feeding Checklist** — AM and PM task lists. Checking a feed task automatically deducts from inventory. Resets at midnight in your timezone.
-- **Dashboard** — At-a-glance overview of animal health, feed levels, and today's task progress.
-- **Settings** — Farm name and timezone. Checklist midnight reset respects your local time.
+- **Animals** — Individual records with health status, sex, birthday (age auto-calculated), notes, health history, and vaccine log. Grouped by type in collapsible sections. Health status changes are logged automatically with optional notes.
+- **Feed Inventory** — Track stock in kg or lbs with scoop sizes, low-stock thresholds, and target levels. Stock bars, days-remaining estimates, and inline restocking. Checks for rot/spills reminder.
+- **Feeding Checklist** — AM and PM task lists with a Weekly section for recurring chores. Communal tasks or per-animal (e.g. each dairy cow checked individually). Checking a feed task automatically deducts from inventory. Check-all button for per-animal tasks. Resets at midnight in your timezone; weekly tasks reset Monday at midnight.
+- **Dashboard** — Stat cards for animal count, low stock, and AM/PM task progress. Animal health summary, feed inventory bars, and a Farm Notes section for freeform dated entries.
+- **Settings** — Farm name and timezone. Export/import animal records as JSON for backup. Wipe all data option.
 - **Offline-first** — Everything runs locally. No account, no server, no internet required.
 - **PWA** — Install to home screen on any device (iOS, Android, desktop).
 - **Desktop app** — Installable as a native desktop app via Electron, with data stored in a local JSON file.

@@ -128,10 +128,10 @@ export default function AnimalForm({ initial, onSave, onClose }: Props) {
           </label>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-2 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">
+            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">
               Cancel
             </button>
-            <button type="submit" className="flex-1 py-2 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">
+            <button type="submit" className="flex-1 py-3 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">
               {initial ? "Save Changes" : "Add Animal"}
             </button>
           </div>
