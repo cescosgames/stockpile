@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Animal, HealthStatus, VaccineEntry } from "../types";
 import AnimalCard from "./AnimalCard";
 import AnimalForm from "./AnimalForm";
+import ConfirmModal from "./ConfirmModal";
 
 type FormData = Omit<Animal, "id" | "healthLog" | "vaccineLog"> & { healthNote?: string };
 
@@ -24,6 +25,7 @@ export default function AnimalList({ animals, setAnimals }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Animal | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [retiring, setRetiring] = useState<Animal | null>(null);
 
   function toggleGroup(key: string) {
     setCollapsed((prev) => {
@@ -49,8 +51,8 @@ export default function AnimalList({ animals, setAnimals }: Props) {
   }
 
   function handleDelete(id: string) {
-    if (!confirm("Delete this animal?")) return;
-    setAnimals(animals.filter((a) => a.id !== id));
+    const animal = animals.find((a) => a.id === id);
+    if (animal) setRetiring(animal);
   }
 
   function handleAddVaccine(animalId: string, entry: Omit<VaccineEntry, "id">) {
@@ -152,6 +154,15 @@ export default function AnimalList({ animals, setAnimals }: Props) {
           initial={editing ?? undefined}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditing(null); }}
+        />
+      )}
+
+      {retiring && (
+        <ConfirmModal
+          message={`Retire ${retiring.name} from your records?`}
+          confirmLabel="Retire"
+          onConfirm={() => { setAnimals(animals.filter((a) => a.id !== retiring.id)); setRetiring(null); }}
+          onCancel={() => setRetiring(null)}
         />
       )}
     </div>

@@ -77,7 +77,7 @@ export default function AnimalCard({ animal, onEdit, onDelete, onAddVaccine, onD
             Edit
           </button>
           <button onClick={onDelete} className="text-xs text-text-muted hover:text-danger px-3 py-1.5 rounded hover:bg-danger-subtle transition-colors">
-            Delete
+            Retire
           </button>
         </div>
       </div>

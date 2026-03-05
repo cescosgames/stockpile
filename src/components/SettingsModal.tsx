@@ -130,8 +130,8 @@ export default function SettingsModal({ settings, animals, onSave, onImportAnima
   }
 
   return (
-    <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface-raised rounded-card border border-border w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto themed-scroll">
+    <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-surface-raised rounded-card border border-border w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto themed-scroll" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-base font-semibold text-text-primary">Settings</h2>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary text-xl leading-none">×</button>

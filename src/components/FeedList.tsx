@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FeedItem, FeedingTask } from "../types";
 import FeedForm from "./FeedForm";
+import ConfirmModal from "./ConfirmModal";
 
 type Props = {
   feedItems: FeedItem[];
@@ -21,6 +22,7 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
   const [editing, setEditing] = useState<FeedItem | null>(null);
   const [restocking, setRestocking] = useState<string | null>(null);
   const [restockQty, setRestockQty] = useState("");
+  const [deleting, setDeleting] = useState<FeedItem | null>(null);
 
   function handleSave(data: Omit<FeedItem, "id">) {
     if (editing) {
@@ -32,8 +34,8 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
   }
 
   function handleDelete(id: string) {
-    if (!confirm("Delete this feed item?")) return;
-    setFeedItems(feedItems.filter((f) => f.id !== id));
+    const item = feedItems.find((f) => f.id === id);
+    if (item) setDeleting(item);
   }
 
   function handleRestock(id: string) {
@@ -50,7 +52,16 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-text-primary">Feed Inventory</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-text-primary">Feed Inventory</h2>
+            <div className="relative group">
+              <span className="w-4 h-4 rounded-full border border-text-muted text-text-muted text-[10px] font-bold flex items-center justify-center cursor-help select-none">?</span>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-stone-800 text-white text-xs rounded-md px-3 py-2 hidden group-hover:block z-10 leading-relaxed">
+                Stock quantities are self-reported. Regularly check for spoilage, rot, spills, and pests to make sure your records reflect what's actually on hand.
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-stone-800" />
+              </div>
+            </div>
+          </div>
           <p className="text-xs text-text-muted">
             {feedItems.length} items
             {lowCount > 0 && <span className="text-warning ml-2">· {lowCount} low stock</span>}
@@ -74,7 +85,7 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
           const scoopsLeft = f.scoopSize > 0 ? Math.floor(f.qty / f.scoopSize) : 0;
           const daily = dailyScoops(f, feedingTasks);
           const daysLeft = daily > 0 ? Math.floor(scoopsLeft / daily) : null;
-          const pct = Math.min(100, f.minQty > 0 ? Math.round((f.qty / (f.minQty * 2)) * 100) : 100);
+          const pct = Math.min(100, f.maxQty > 0 ? Math.round((f.qty / f.maxQty) * 100) : 100);
 
           return (
             <div key={f.id} className={`bg-surface-raised rounded-card border ${isLow ? "border-warning" : "border-border"} p-4`}>
@@ -114,7 +125,7 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
               </div>
               <div className="flex justify-between text-xs text-text-muted mt-1">
                 <span>Low stock: {f.minQty} {f.unit}</span>
-                <span>Target: {f.minQty * 2} {f.unit}</span>
+                <span>Target: {f.maxQty} {f.unit}</span>
               </div>
 
               {/* Inline restock */}
@@ -145,6 +156,15 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
           initial={editing ?? undefined}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditing(null); }}
+        />
+      )}
+
+      {deleting && (
+        <ConfirmModal
+          message={`Remove ${deleting.name} from your feed inventory?`}
+          confirmLabel="Remove"
+          onConfirm={() => { setFeedItems(feedItems.filter((f) => f.id !== deleting.id)); setDeleting(null); }}
+          onCancel={() => setDeleting(null)}
         />
       )}
     </div>

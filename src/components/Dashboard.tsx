@@ -95,7 +95,7 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
           <h2 className="text-sm font-semibold text-text-primary mb-4">Feed Inventory</h2>
           <div className="flex flex-col gap-3">
             {feedItems.map((f) => {
-              const pct = Math.min(100, Math.round((f.qty / Math.max(f.minQty * 2, 1)) * 100));
+              const pct = Math.min(100, Math.round((f.qty / Math.max(f.maxQty, 1)) * 100));
               const isLow = f.qty <= f.minQty;
               return (
                 <div key={f.id}>
@@ -103,7 +103,7 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
                     <span className={`font-medium ${isLow ? "text-warning" : "text-text-primary"}`}>
                       {isLow ? "⚠ " : ""}{f.name}
                     </span>
-                    <span className="text-text-muted">{f.qty} / {f.minQty * 2} {f.unit}</span>
+                    <span className="text-text-muted">{f.qty} / {f.maxQty} {f.unit}</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-surface-sunken overflow-hidden">
                     <div

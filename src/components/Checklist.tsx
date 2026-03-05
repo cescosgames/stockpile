@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { DateTime } from "luxon";
 import type { Animal, FeedingTask, FeedItem, CheckedState, Session } from "../types";
+import ConfirmModal from "./ConfirmModal";
 
 type Props = {
   feedingTasks: FeedingTask[];
@@ -28,10 +29,10 @@ type SessionBlockProps = {
   checkedState: CheckedState;
   feedItems: FeedItem[];
   toggle: (task: FeedingTask, animalId?: string) => void;
-  deleteTask: (id: string) => void;
+  requestDelete: (task: FeedingTask) => void;
 };
 
-function SessionBlock({ session, tasks, animals, today, checkedState, feedItems, toggle, deleteTask }: SessionBlockProps) {
+function SessionBlock({ session, tasks, animals, today, checkedState, feedItems, toggle, requestDelete }: SessionBlockProps) {
   // Count total checkable items and how many are done, accounting for per-animal expansion
   let total = 0;
   let done = 0;
@@ -82,7 +83,7 @@ function SessionBlock({ session, tasks, animals, today, checkedState, feedItems,
                     )}
                   </div>
                   <button
-                    onClick={() => deleteTask(task.id)}
+                    onClick={() => requestDelete(task)}
                     className="text-text-muted hover:text-danger text-xs px-2 py-1 rounded hover:bg-danger-subtle transition-colors shrink-0"
                   >✕</button>
                 </div>
@@ -133,7 +134,7 @@ function SessionBlock({ session, tasks, animals, today, checkedState, feedItems,
                 )}
               </div>
               <button
-                onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+                onClick={(e) => { e.stopPropagation(); requestDelete(task); }}
                 className="text-text-muted hover:text-danger text-xs px-2 py-1 rounded hover:bg-danger-subtle transition-colors shrink-0"
               >✕</button>
             </div>
@@ -147,6 +148,7 @@ function SessionBlock({ session, tasks, animals, today, checkedState, feedItems,
 export default function Checklist({ feedingTasks, feedItems, animals, checkedState, timezone, setChecked, setFeedingTasks }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [taskForm, setTaskForm] = useState<TaskFormState>(BLANK_TASK);
+  const [pendingDelete, setPendingDelete] = useState<FeedingTask | null>(null);
   const today = todayKey(timezone);
 
   const amTasks = feedingTasks.filter((t) => t.session === "AM");
@@ -161,7 +163,6 @@ export default function Checklist({ feedingTasks, feedItems, animals, checkedSta
   }
 
   function deleteTask(id: string) {
-    if (!confirm("Remove this task?")) return;
     setFeedingTasks(feedingTasks.filter((t) => t.id !== id));
   }
 
@@ -248,8 +249,17 @@ export default function Checklist({ feedingTasks, feedItems, animals, checkedSta
         </form>
       )}
 
-      <SessionBlock session="AM" tasks={amTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} deleteTask={deleteTask} />
-      <SessionBlock session="PM" tasks={pmTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} deleteTask={deleteTask} />
+      <SessionBlock session="AM" tasks={amTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} />
+      <SessionBlock session="PM" tasks={pmTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} />
+
+      {pendingDelete && (
+        <ConfirmModal
+          message={`Remove "${pendingDelete.label}" from your tasks?`}
+          confirmLabel="Remove"
+          onConfirm={() => { deleteTask(pendingDelete.id); setPendingDelete(null); }}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }

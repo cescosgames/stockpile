@@ -7,11 +7,11 @@ type Props = {
   onClose: () => void;
 };
 
-const BLANK: Omit<FeedItem, "id"> = { name: "", unit: "kg", qty: 0, minQty: 0, scoopSize: 0.5 };
+const BLANK: Omit<FeedItem, "id"> = { name: "", unit: "kg", qty: 0, minQty: 0, maxQty: 0, scoopSize: 0.5 };
 
 export default function FeedForm({ initial, onSave, onClose }: Props) {
   const [form, setForm] = useState<Omit<FeedItem, "id">>(
-    initial ? { name: initial.name, unit: initial.unit, qty: initial.qty, minQty: initial.minQty, scoopSize: initial.scoopSize } : BLANK
+    initial ? { name: initial.name, unit: initial.unit, qty: initial.qty, minQty: initial.minQty, maxQty: initial.maxQty, scoopSize: initial.scoopSize } : BLANK
   );
 
   const setNum = (k: keyof Omit<FeedItem, "id" | "name" | "unit">, v: string) =>
@@ -25,8 +25,8 @@ export default function FeedForm({ initial, onSave, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface-raised rounded-card border border-border w-full max-w-md shadow-xl">
+    <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-surface-raised rounded-card border border-border w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-base font-semibold text-text-primary">
             {initial ? "Edit Feed Item" : "Add Feed Item"}
@@ -64,16 +64,7 @@ export default function FeedForm({ initial, onSave, onClose }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">Scoop size ({form.unit})</span>
-              <input
-                type="number" min="0.01" step="0.01"
-                className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
-                value={form.scoopSize || ""} onChange={(e) => setNum("scoopSize", e.target.value)}
-                placeholder="0.5" required
-              />
-            </label>
+          <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-text-secondary">In stock ({form.unit})</span>
               <input
@@ -84,11 +75,29 @@ export default function FeedForm({ initial, onSave, onClose }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-text-secondary">Scoop size ({form.unit})</span>
+              <input
+                type="number" min="0.01" step="0.01"
+                className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
+                value={form.scoopSize || ""} onChange={(e) => setNum("scoopSize", e.target.value)}
+                placeholder="0.5" required
+              />
+            </label>
+            <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-text-secondary">Low-stock at ({form.unit})</span>
               <input
                 type="number" min="0" step="0.1"
                 className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
                 value={form.minQty || ""} onChange={(e) => setNum("minQty", e.target.value)}
+                placeholder="0"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-text-secondary">Target stock ({form.unit})</span>
+              <input
+                type="number" min="0" step="0.1"
+                className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
+                value={form.maxQty || ""} onChange={(e) => setNum("maxQty", e.target.value)}
                 placeholder="0"
               />
             </label>

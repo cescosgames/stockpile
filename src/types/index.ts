@@ -27,6 +27,7 @@ export type FeedItem = {
   unit: "kg" | "lbs";
   qty: number;       // current stock in unit
   minQty: number;    // low-stock threshold in unit
+  maxQty: number;    // target/full stock in unit (sets bar length)
   scoopSize: number; // weight per scoop in unit
 };
 
