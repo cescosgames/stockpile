@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Animal, FeedItem, FeedingTask, CheckedState } from "../types";
+import type { Animal, FeedItem, FeedingTask, CheckedState, Settings } from "../types";
 
 const STORE_VERSION = "v5"; // bump when data shape changes to clear stale localStorage
 
@@ -47,20 +47,28 @@ const SEED_TASKS: FeedingTask[] = [
   { id: "t2", label: "Feed animals", session: "PM", feedItemId: "f3", scoops: 1 },
 ];
 
+const DEFAULT_SETTINGS: Settings = {
+  farmName: "My Farm",
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+};
+
 export function useStore() {
   const [animals, setAnimalsState] = useState<Animal[]>(() => load("animals", SEED_ANIMALS));
   const [feedItems, setFeedItemsState] = useState<FeedItem[]>(() => load("feedItems", SEED_FEED));
   const [feedingTasks, setFeedingTasksState] = useState<FeedingTask[]>(() => load("feedingTasks", SEED_TASKS));
   const [checkedState, setCheckedStateState] = useState<CheckedState>(() => load("checkedState", {}));
+  const [settings, setSettingsState] = useState<Settings>(() => load("settings", DEFAULT_SETTINGS));
 
   useEffect(() => { save("animals", animals); }, [animals]);
   useEffect(() => { save("feedItems", feedItems); }, [feedItems]);
   useEffect(() => { save("feedingTasks", feedingTasks); }, [feedingTasks]);
   useEffect(() => { save("checkedState", checkedState); }, [checkedState]);
+  useEffect(() => { save("settings", settings); }, [settings]);
 
   function setAnimals(next: Animal[]) { setAnimalsState(next); }
   function setFeedItems(next: FeedItem[]) { setFeedItemsState(next); }
   function setFeedingTasks(next: FeedingTask[]) { setFeedingTasksState(next); }
+  function setSettings(next: Settings) { setSettingsState(next); }
 
   function setChecked(key: string, value: boolean, task?: FeedingTask) {
     // Guard: skip if value isn't actually changing
@@ -78,5 +86,5 @@ export function useStore() {
     }
   }
 
-  return { animals, feedItems, feedingTasks, checkedState, setAnimals, setFeedItems, setFeedingTasks, setChecked };
+  return { animals, feedItems, feedingTasks, checkedState, settings, setAnimals, setFeedItems, setFeedingTasks, setChecked, setSettings };
 }

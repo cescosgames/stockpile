@@ -6,12 +6,13 @@ type Props = {
   feedingTasks: FeedingTask[];
   feedItems: FeedItem[];
   checkedState: CheckedState;
+  timezone: string;
   setChecked: (key: string, value: boolean, task?: FeedingTask) => void;
   setFeedingTasks: (tasks: FeedingTask[]) => void;
 };
 
-function todayKey() {
-  return DateTime.now().toISODate() ?? "";
+function todayKey(tz: string) {
+  return DateTime.now().setZone(tz).toISODate() ?? "";
 }
 
 function checkedKey(date: string, session: Session, taskId: string) {
@@ -23,10 +24,10 @@ function newId() { return Date.now().toString(); }
 type TaskFormState = { label: string; session: Session; feedItemId: string; scoops: string };
 const BLANK_TASK: TaskFormState = { label: "", session: "AM", feedItemId: "", scoops: "" };
 
-export default function Checklist({ feedingTasks, feedItems, checkedState, setChecked, setFeedingTasks }: Props) {
+export default function Checklist({ feedingTasks, feedItems, checkedState, timezone, setChecked, setFeedingTasks }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [taskForm, setTaskForm] = useState<TaskFormState>(BLANK_TASK);
-  const today = todayKey();
+  const today = todayKey(timezone);
 
   const amTasks = feedingTasks.filter((t) => t.session === "AM");
   const pmTasks = feedingTasks.filter((t) => t.session === "PM");
@@ -65,7 +66,7 @@ export default function Checklist({ feedingTasks, feedItems, checkedState, setCh
       <section className="bg-surface-raised rounded-card border border-border overflow-hidden">
         <div className={`px-5 py-3 flex items-center justify-between border-b border-border ${allDone ? "bg-success-subtle" : "bg-surface-sunken"}`}>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-text-primary">{session === "AM" ? "☀ Morning" : "🌙 Evening"}</span>
+            <span className="text-sm font-semibold text-text-primary">{session === "AM" ? "Morning" : "Evening"}</span>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${allDone ? "bg-success text-white" : "bg-surface text-text-muted border border-border"}`}>
               {done}/{tasks.length}
             </span>

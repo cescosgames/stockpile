@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import type { Animal, FeedItem, FeedingTask, CheckedState, HealthStatus } from "../types";
 
 type Props = {
@@ -5,6 +6,7 @@ type Props = {
   feedItems: FeedItem[];
   feedingTasks: FeedingTask[];
   checkedState: CheckedState;
+  timezone: string;
 };
 
 const HEALTH_STYLE: Record<HealthStatus, string> = {
@@ -13,8 +15,8 @@ const HEALTH_STYLE: Record<HealthStatus, string> = {
   Poor: "bg-danger-subtle text-danger",
 };
 
-function todayKey() {
-  return new Date().toISOString().split("T")[0];
+function todayKey(tz: string) {
+  return DateTime.now().setZone(tz).toISODate() ?? "";
 }
 
 function checklistKey(date: string, session: string, taskId: string) {
@@ -31,8 +33,8 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string 
   );
 }
 
-export default function Dashboard({ animals, feedItems, feedingTasks, checkedState }: Props) {
-  const today = todayKey();
+export default function Dashboard({ animals, feedItems, feedingTasks, checkedState, timezone }: Props) {
+  const today = todayKey(timezone);
   const totalAnimals = animals.length;
   const lowStock = feedItems.filter((f) => f.qty <= f.minQty);
 

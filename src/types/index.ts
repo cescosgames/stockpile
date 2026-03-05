@@ -42,4 +42,9 @@ export type FeedingTask = {
 
 export type CheckedState = Record<string, boolean>;
 
+export type Settings = {
+  farmName: string;
+  timezone: string;
+};
+
 export type Tab = "dashboard" | "animals" | "feed" | "checklist";
