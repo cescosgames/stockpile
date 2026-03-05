@@ -7,6 +7,8 @@ type Props = {
   onEdit: () => void;
   onDelete: () => void;
   onAddVaccine: (animalId: string, entry: Omit<VaccineEntry, "id">) => void;
+  onDeleteVaccine: (animalId: string, vaccineId: string) => void;
+  onDeleteHealthLog: (animalId: string, index: number) => void;
 };
 
 const HEALTH_PILL: Record<HealthStatus, string> = {
@@ -29,7 +31,7 @@ function formatAge(birthday: string): string {
   return `${years}y ${months}m`;
 }
 
-export default function AnimalCard({ animal, onEdit, onDelete, onAddVaccine }: Props) {
+export default function AnimalCard({ animal, onEdit, onDelete, onAddVaccine, onDeleteVaccine, onDeleteHealthLog }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [showVaxForm, setShowVaxForm] = useState(false);
   const [vaxForm, setVaxForm] = useState(BLANK_VAX);
@@ -111,6 +113,28 @@ export default function AnimalCard({ animal, onEdit, onDelete, onAddVaccine }: P
             </div>
           )}
 
+          {/* Health log */}
+          {(animal.healthLog ?? []).length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-text-muted mb-2">Health History</p>
+              <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto themed-scroll">
+                {[...(animal.healthLog ?? [])].map((entry, i) => ({ entry, i })).reverse().map(({ entry, i }) => (
+                  <div key={i} className="flex items-start gap-3 text-xs bg-surface-sunken rounded px-3 py-2">
+                    <span className="text-text-muted w-24 shrink-0">{entry.date}</span>
+                    <span className={`font-medium shrink-0 ${entry.status === "Good" ? "text-success" : entry.status === "Fair" ? "text-warning" : "text-danger"}`}>
+                      {entry.status}
+                    </span>
+                    {entry.note && <span className="text-text-secondary flex-1">{entry.note}</span>}
+                    <button
+                      onClick={() => onDeleteHealthLog(animal.id, i)}
+                      className="ml-auto text-text-muted hover:text-danger transition-colors shrink-0"
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Vaccine log */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -127,12 +151,16 @@ export default function AnimalCard({ animal, onEdit, onDelete, onAddVaccine }: P
               <p className="text-xs text-text-muted">No vaccines recorded.</p>
             )}
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto themed-scroll">
               {vaccineLog.map((v) => (
                 <div key={v.id} className="flex items-start gap-3 text-xs bg-surface-sunken rounded px-3 py-2">
                   <span className="text-text-muted w-24 shrink-0">{v.date}</span>
                   <span className="font-medium text-text-primary">{v.vaccine}</span>
-                  {v.note && <span className="text-text-secondary">{v.note}</span>}
+                  {v.note && <span className="text-text-secondary flex-1">{v.note}</span>}
+                  <button
+                    onClick={() => onDeleteVaccine(animal.id, v.id)}
+                    className="ml-auto text-text-muted hover:text-danger transition-colors shrink-0"
+                  >✕</button>
                 </div>
               ))}
             </div>

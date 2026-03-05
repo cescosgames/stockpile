@@ -3,6 +3,8 @@ import type { Animal, HealthStatus, VaccineEntry } from "../types";
 import AnimalCard from "./AnimalCard";
 import AnimalForm from "./AnimalForm";
 
+type FormData = Omit<Animal, "id" | "healthLog" | "vaccineLog"> & { healthNote?: string };
+
 type Props = {
   animals: Animal[];
   setAnimals: (animals: Animal[]) => void;
@@ -22,11 +24,17 @@ export default function AnimalList({ animals, setAnimals }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Animal | null>(null);
 
-  function handleSave(data: Omit<Animal, "id" | "healthLog" | "vaccineLog">) {
+  function handleSave({ healthNote, ...data }: FormData) {
+    const today = new Date().toISOString().split("T")[0];
     if (editing) {
-      setAnimals(animals.map((a) => a.id === editing.id ? { ...editing, ...data } : a));
+      const healthChanged = editing.health !== data.health;
+      const healthLog = healthChanged
+        ? [...(editing.healthLog ?? []), { date: today, status: data.health, note: healthNote ?? "" }]
+        : editing.healthLog;
+      setAnimals(animals.map((a) => a.id === editing.id ? { ...editing, ...data, healthLog } : a));
     } else {
-      setAnimals([...animals, { id: newId(), ...data, healthLog: [], vaccineLog: [] }]);
+      // Log the initial health status when adding a new animal
+      setAnimals([...animals, { id: newId(), ...data, healthLog: [{ date: today, status: data.health, note: "" }], vaccineLog: [] }]);
     }
     setEditing(null);
   }
@@ -37,13 +45,21 @@ export default function AnimalList({ animals, setAnimals }: Props) {
   }
 
   function handleAddVaccine(animalId: string, entry: Omit<VaccineEntry, "id">) {
-    setAnimals(
-      animals.map((a) =>
-        a.id === animalId
-          ? { ...a, vaccineLog: [...(a.vaccineLog ?? []), { id: newId(), ...entry }] }
-          : a
-      )
-    );
+    setAnimals(animals.map((a) =>
+      a.id === animalId ? { ...a, vaccineLog: [...(a.vaccineLog ?? []), { id: newId(), ...entry }] } : a
+    ));
+  }
+
+  function handleDeleteVaccine(animalId: string, vaccineId: string) {
+    setAnimals(animals.map((a) =>
+      a.id === animalId ? { ...a, vaccineLog: a.vaccineLog.filter((v) => v.id !== vaccineId) } : a
+    ));
+  }
+
+  function handleDeleteHealthLog(animalId: string, index: number) {
+    setAnimals(animals.map((a) =>
+      a.id === animalId ? { ...a, healthLog: a.healthLog.filter((_, i) => i !== index) } : a
+    ));
   }
 
   // Group by type, preserving insertion order
@@ -102,6 +118,8 @@ export default function AnimalList({ animals, setAnimals }: Props) {
                   onEdit={() => { setEditing(animal); setShowForm(true); }}
                   onDelete={() => handleDelete(animal.id)}
                   onAddVaccine={handleAddVaccine}
+                  onDeleteVaccine={handleDeleteVaccine}
+                  onDeleteHealthLog={handleDeleteHealthLog}
                 />
               ))}
             </div>

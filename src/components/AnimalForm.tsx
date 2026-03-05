@@ -1,9 +1,11 @@
 import { useState } from "react";
 import type { Animal, HealthStatus, Sex } from "../types";
 
+type FormData = Omit<Animal, "id" | "healthLog" | "vaccineLog"> & { healthNote?: string };
+
 type Props = {
   initial?: Animal;
-  onSave: (a: Omit<Animal, "id" | "healthLog" | "vaccineLog">) => void;
+  onSave: (a: FormData) => void;
   onClose: () => void;
 };
 
@@ -15,14 +17,18 @@ export default function AnimalForm({ initial, onSave, onClose }: Props) {
       ? { name: initial.name, type: initial.type, health: initial.health, sex: initial.sex, birthday: initial.birthday, notes: initial.notes }
       : BLANK
   );
+  const [healthNote, setHealthNote] = useState("");
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((p) => ({ ...p, [k]: v }));
 
+  // Show the health note field only when editing and health has changed
+  const healthChanged = !!initial && form.health !== initial.health;
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.type.trim()) return;
-    onSave(form);
+    onSave({ ...form, ...(healthChanged ? { healthNote } : {}) });
     onClose();
   }
 
@@ -99,6 +105,16 @@ export default function AnimalForm({ initial, onSave, onClose }: Props) {
                 </button>
               ))}
             </div>
+
+            {/* Note field appears only when health status has changed */}
+            {healthChanged && (
+              <input
+                className="mt-2 border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
+                placeholder="Add a note about this change (optional)"
+                value={healthNote}
+                onChange={(e) => setHealthNote(e.target.value)}
+              />
+            )}
           </div>
 
           <label className="flex flex-col gap-1">

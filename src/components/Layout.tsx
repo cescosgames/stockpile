@@ -86,6 +86,10 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
       <main className="flex-1 p-6 max-w-5xl w-full mx-auto">
         {children}
       </main>
+
+      <footer className="py-3 px-6 flex justify-end">
+        <p className="text-xs text-text-muted">v0.1.0 — offline only</p>
+      </footer>
     </div>
   );
 }
