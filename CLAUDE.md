@@ -1,7 +1,8 @@
-# Farm App — Claude Code Context
+# Stockpile — Claude Code Context
 
 ## Project
-Offline-capable inventory and feeding checklist app for a small family farm.
+**Stockpile** — open source, offline-first farm management app for small family farms.
+Tracks livestock, feed inventory, and daily feeding checklists.
 
 **Roadmap:**
 1. React (Vite) web app — localStorage, single device ✓
@@ -20,10 +21,22 @@ Offline-capable inventory and feeding checklist app for a small family farm.
 ## Project Structure
 ```
 src/
-  components/       # One file per component
-  hooks/            # useStore.ts — ALL persistence goes through here
-  types/            # Shared TypeScript interfaces (Animal, FeedItem, etc.)
-  App.tsx
+  components/
+    Layout.tsx          # App shell — header (Stockpile wordmark, farm name, clock, gear), tab nav
+    Dashboard.tsx       # Overview: stat cards, animal health, feed inventory bars
+    AnimalList.tsx      # Animals tab — grouped by type, CRUD
+    AnimalCard.tsx      # Individual animal — expandable (sex, age, birthday, notes, vaccine log)
+    AnimalForm.tsx      # Add/edit animal modal
+    Checklist.tsx       # AM/PM task lists — checking deducts feed inventory
+    FeedList.tsx        # Feed inventory tab — stock bars, days remaining, inline restock
+    FeedForm.tsx        # Add/edit feed item modal
+    SettingsModal.tsx   # Farm name + timezone (IANA), live clock preview
+  hooks/
+    useStore.ts         # ALL persistence — localStorage, seed data, store versioning, checkedState pruning
+  types/
+    index.ts            # All shared TypeScript types
+  App.tsx               # Tab state, settings modal state, wires store → components
+  index.css             # Tailwind @theme (farm palette) + base resets
 ```
 
 ## Key Conventions
@@ -83,6 +96,9 @@ type Settings = {
   timezone: string;    // IANA timezone string
 };
 ```
+
+## Store Versioning
+`STORE_VERSION` constant in `useStore.ts` (currently `"v7"`). Bump it whenever the data shape changes — on load it clears all localStorage keys and reseeds. `checkedState` is also pruned to 90 days on every load to keep storage lean.
 
 ## Dev Commands
 - `npm run dev` — start Vite dev server
