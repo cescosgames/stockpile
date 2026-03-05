@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Animal, FeedItem, FeedingTask, CheckedState, Settings } from "../types";
 
-const STORE_VERSION = "v6"; // bump when data shape changes to clear stale localStorage
+const STORE_VERSION = "v7"; // bump when data shape changes to clear stale localStorage
 
 (function clearIfStale() {
   if (localStorage.getItem("storeVersion") !== STORE_VERSION) {
@@ -33,7 +33,7 @@ const SEED_ANIMALS: Animal[] = [
     health: "Good",
     sex: "Female",
     birthday: TODAY,
-    notes: "",
+    notes: "Note goes here.",
     healthLog: [],
     vaccineLog: [{ id: "v1", date: TODAY, vaccine: "Example Vaccine", note: "Example note" }],
   },
