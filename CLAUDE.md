@@ -8,8 +8,8 @@ Tracks livestock, feed inventory, and daily feeding checklists.
 1. React (Vite) web app — localStorage, single device ✓
 2. PWA — installable on any device, still single-device/localStorage ✓
 3. Electron wrapper — swap localStorage for electron-store IPC (desktop packaging) ✓
-4. *(Stretch)* PocketBase backend — self-hosted, enables true multi-device sync
-5. *(Stretch)* PWA goes multi-device — once PocketBase is live, PWA installs on phones/tablets become genuinely useful
+4. PocketBase backend — self-hosted on Raspberry Pi, real-time multi-device sync (in progress → branch: feature/pocketbase-sync)
+5. Multi-device PWA — once PocketBase is live, PWA installs on phones/tablets become genuinely useful across the farm
 
 ## Stack
 - Vite + React 18 + TypeScript
@@ -153,14 +153,37 @@ type Settings = {
 - Do not add a router; this is a single-page app with tab-based navigation
 - Do not use any UI component library (shadcn, MUI, etc.) — custom styled components only
 
-## PocketBase Migration Notes (next milestone)
+## PocketBase Plan (branch: feature/pocketbase-sync)
 
-Self-hosted PocketBase instance on local network (Raspberry Pi or similar).
-`src/hooks/useStore.ts` is again the only file that changes — replace electron-store IPC with PocketBase SDK calls.
-PocketBase provides real-time subscriptions (SSE) — use these instead of polling.
-Auth: PocketBase built-in auth; SDK handles token storage automatically.
-Offline resilience: keep a local cache in `useStore.ts` so the app degrades gracefully when off-network.
-Both PWA and Electron clients point at the same PocketBase instance — same data, real-time sync across devices.
+**Infrastructure:**
+- Raspberry Pi on the farm's local network running PocketBase as a single binary
+- No cloud, no subscription — Pi sits on the network, auto-starts PocketBase on boot via systemd
+- All farm devices (phones, tablets, Electron desktop) connect to `http://[pi-ip]:8090`
+- PocketBase stores data in SQLite on the Pi's SD card
 
-## Reference Files
-- `@docs/architecture.md` — overall app structure and migration plan (create as needed)
+**Auth:** None — open local network, all farmhands can read and write freely
+
+**What syncs:** Everything — animals, feedItems, feedingTasks, checkedState, settings
+
+**Real-time:** PocketBase SSE subscriptions — when one device checks off a task or updates an animal, all other connected devices update instantly without polling
+
+**Offline resilience strategy (read-only fallback):**
+- On load, `useStore.ts` attempts to connect to PocketBase
+- If reachable: full live sync via subscriptions
+- If unreachable: app loads from a local cache (last known state), shows a persistent "Offline — changes won't be saved" banner, disables all writes
+- No conflict resolution needed — writes are simply blocked when offline
+- When Pi comes back online, user refreshes and live sync resumes
+- Local cache is written to localStorage (or electron-store) as a mirror after every successful sync
+
+**`useStore.ts` is the only file that changes** — components, types, and App.tsx are untouched
+
+**Pi setup steps (for when hardware arrives):**
+1. Flash Raspberry Pi OS Lite to SD card
+2. Enable SSH, connect to farm network
+3. Download PocketBase ARM binary, make executable
+4. Create collections: `animals`, `feedItems`, `feedingTasks`, `checkedState`, `settings`
+5. Create systemd service to auto-start PocketBase on boot
+6. Note the Pi's local IP — set as static in router if possible
+7. Set `VITE_PB_URL=http://[pi-ip]:8090` in `.env.local`
+
+**New dep when ready:** `pocketbase` (official JS SDK — ask before installing)
