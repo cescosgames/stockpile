@@ -77,7 +77,7 @@ app.whenReady().then(() => {
     const csp = isDev
       ? [
           "default-src 'self' http://localhost:5173",
-          "script-src 'self' 'unsafe-eval' http://localhost:5173",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline' http://localhost:5173",
           "style-src 'self' 'unsafe-inline'",
           "connect-src 'self' ws://localhost:5173 http://localhost:5173",
         ].join("; ")
