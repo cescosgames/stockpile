@@ -3,6 +3,8 @@ import { useStore } from "./hooks/useStore";
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 import AnimalList from "./components/AnimalList";
+import FeedList from "./components/FeedList";
+import Checklist from "./components/Checklist";
 import type { Tab } from "./types";
 
 export default function App() {
@@ -23,10 +25,16 @@ export default function App() {
         <AnimalList animals={store.animals} setAnimals={store.setAnimals} />
       )}
       {tab === "feed" && (
-        <p className="text-text-muted text-sm">Feed inventory — coming soon</p>
+        <FeedList feedItems={store.feedItems} feedingTasks={store.feedingTasks} setFeedItems={store.setFeedItems} />
       )}
       {tab === "checklist" && (
-        <p className="text-text-muted text-sm">Checklist — coming soon</p>
+        <Checklist
+          feedingTasks={store.feedingTasks}
+          feedItems={store.feedItems}
+          checkedState={store.checkedState}
+          setChecked={store.setChecked}
+          setFeedingTasks={store.setFeedingTasks}
+        />
       )}
     </Layout>
   );

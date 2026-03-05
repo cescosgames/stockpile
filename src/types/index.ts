@@ -24,9 +24,10 @@ export type Animal = {
 export type FeedItem = {
   id: string;
   name: string;
-  unit: string;
-  qty: number;
-  minQty: number;
+  unit: "kg" | "lbs";
+  qty: number;       // current stock in unit
+  minQty: number;    // low-stock threshold in unit
+  scoopSize: number; // weight per scoop in unit
 };
 
 export type Session = "AM" | "PM";
@@ -35,6 +36,8 @@ export type FeedingTask = {
   id: string;
   label: string;
   session: Session;
+  feedItemId?: string; // undefined = no feed consumed (e.g. "collect eggs")
+  scoops?: number;
 };
 
 export type CheckedState = Record<string, boolean>;

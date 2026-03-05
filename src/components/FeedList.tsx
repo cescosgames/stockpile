@@ -1,0 +1,152 @@
+import { useState } from "react";
+import type { FeedItem, FeedingTask } from "../types";
+import FeedForm from "./FeedForm";
+
+type Props = {
+  feedItems: FeedItem[];
+  feedingTasks: FeedingTask[];
+  setFeedItems: (items: FeedItem[]) => void;
+};
+
+function newId() { return Date.now().toString(); }
+
+function dailyScoops(item: FeedItem, tasks: FeedingTask[]): number {
+  return tasks
+    .filter((t) => t.feedItemId === item.id)
+    .reduce((s, t) => s + (t.scoops ?? 0), 0);
+}
+
+export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Props) {
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<FeedItem | null>(null);
+  const [restocking, setRestocking] = useState<string | null>(null);
+  const [restockQty, setRestockQty] = useState("");
+
+  function handleSave(data: Omit<FeedItem, "id">) {
+    if (editing) {
+      setFeedItems(feedItems.map((f) => f.id === editing.id ? { ...editing, ...data } : f));
+    } else {
+      setFeedItems([...feedItems, { id: newId(), ...data }]);
+    }
+    setEditing(null);
+  }
+
+  function handleDelete(id: string) {
+    if (!confirm("Delete this feed item?")) return;
+    setFeedItems(feedItems.filter((f) => f.id !== id));
+  }
+
+  function handleRestock(id: string) {
+    const add = parseFloat(restockQty);
+    if (!add || add <= 0) return;
+    setFeedItems(feedItems.map((f) => f.id === id ? { ...f, qty: +(f.qty + add).toFixed(2) } : f));
+    setRestocking(null);
+    setRestockQty("");
+  }
+
+  const lowCount = feedItems.filter((f) => f.qty <= f.minQty).length;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-text-primary">Feed Inventory</h2>
+          <p className="text-xs text-text-muted">
+            {feedItems.length} items
+            {lowCount > 0 && <span className="text-warning ml-2">· {lowCount} low stock</span>}
+          </p>
+        </div>
+        <button
+          onClick={() => { setEditing(null); setShowForm(true); }}
+          className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-btn hover:bg-accent-hover transition-colors"
+        >
+          + Add Item
+        </button>
+      </div>
+
+      {feedItems.length === 0 && (
+        <p className="text-sm text-text-muted py-8 text-center">No feed items yet.</p>
+      )}
+
+      <div className="flex flex-col gap-3">
+        {feedItems.map((f) => {
+          const isLow = f.qty <= f.minQty;
+          const scoopsLeft = f.scoopSize > 0 ? Math.floor(f.qty / f.scoopSize) : 0;
+          const daily = dailyScoops(f, feedingTasks);
+          const daysLeft = daily > 0 ? Math.floor(scoopsLeft / daily) : null;
+          const pct = Math.min(100, f.minQty > 0 ? Math.round((f.qty / (f.minQty * 2)) * 100) : 100);
+
+          return (
+            <div key={f.id} className={`bg-surface-raised rounded-card border ${isLow ? "border-warning" : "border-border"} p-4`}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    {isLow && <span className="text-warning text-sm">⚠</span>}
+                    <span className="text-sm font-semibold text-text-primary">{f.name}</span>
+                  </div>
+                  <div className="flex gap-3 mt-1 text-xs text-text-secondary">
+                    <span>{f.qty} {f.unit} in stock</span>
+                    <span>·</span>
+                    <span>{f.scoopSize} {f.unit}/scoop</span>
+                    <span>·</span>
+                    <span className={isLow ? "text-warning font-medium" : ""}>{scoopsLeft} scoops left</span>
+                    {daysLeft !== null && (
+                      <><span>·</span><span className={daysLeft <= 2 ? "text-danger font-medium" : ""}>{daysLeft}d remaining</span></>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button onClick={() => { setRestocking(f.id); setRestockQty(""); }} className="text-xs text-text-muted hover:text-success px-3 py-1.5 rounded hover:bg-success-subtle transition-colors">
+                    + Stock
+                  </button>
+                  <button onClick={() => { setEditing(f); setShowForm(true); }} className="text-xs text-text-muted hover:text-accent px-3 py-1.5 rounded hover:bg-accent-subtle transition-colors">
+                    Edit
+                  </button>
+                  <button onClick={() => handleDelete(f.id)} className="text-xs text-text-muted hover:text-danger px-3 py-1.5 rounded hover:bg-danger-subtle transition-colors">
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              {/* Stock bar */}
+              <div className="h-1.5 rounded-full bg-surface-sunken overflow-hidden">
+                <div className={`h-full rounded-full transition-all ${isLow ? "bg-warning" : "bg-success"}`} style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex justify-between text-xs text-text-muted mt-1">
+                <span>Low stock: {f.minQty} {f.unit}</span>
+                <span>Target: {f.minQty * 2} {f.unit}</span>
+              </div>
+
+              {/* Inline restock */}
+              {restocking === f.id && (
+                <div className="mt-3 flex gap-2">
+                  <input
+                    type="number" min="0.1" step="0.1" autoFocus
+                    placeholder={`Add ${f.unit}...`}
+                    className="flex-1 border border-border rounded px-3 py-1.5 text-sm bg-surface text-text-primary focus:outline-none focus:border-success"
+                    value={restockQty} onChange={(e) => setRestockQty(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleRestock(f.id)}
+                  />
+                  <button onClick={() => handleRestock(f.id)} className="px-3 py-1.5 text-sm bg-success text-white rounded font-medium hover:bg-green-600">
+                    Add
+                  </button>
+                  <button onClick={() => setRestocking(null)} className="px-3 py-1.5 text-sm border border-border rounded text-text-secondary hover:border-border-strong">
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {showForm && (
+        <FeedForm
+          initial={editing ?? undefined}
+          onSave={handleSave}
+          onClose={() => { setShowForm(false); setEditing(null); }}
+        />
+      )}
+    </div>
+  );
+}

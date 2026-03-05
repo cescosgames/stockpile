@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Animal, FeedItem, FeedingTask, CheckedState } from "../types";
 
-const STORE_VERSION = "v3"; // bump when data shape changes to clear stale localStorage
+const STORE_VERSION = "v5"; // bump when data shape changes to clear stale localStorage
 
 (function clearIfStale() {
   if (localStorage.getItem("storeVersion") !== STORE_VERSION) {
@@ -36,20 +36,15 @@ const SEED_ANIMALS: Animal[] = [
 ];
 
 const SEED_FEED: FeedItem[] = [
-  { id: "1", name: "Hay", unit: "bales", qty: 12, minQty: 10 },
-  { id: "2", name: "Corn Feed", unit: "kg", qty: 4, minQty: 15 },
-  { id: "3", name: "Layer Pellets", unit: "kg", qty: 8, minQty: 5 },
-  { id: "4", name: "Pig Meal", unit: "kg", qty: 3, minQty: 10 },
+  { id: "f1", name: "Hay",           unit: "kg",  qty: 120, minQty: 20,  scoopSize: 2    },
+  { id: "f2", name: "Corn Feed",     unit: "kg",  qty: 4,   minQty: 15,  scoopSize: 0.5  },
+  { id: "f3", name: "Layer Pellets", unit: "kg",  qty: 8,   minQty: 5,   scoopSize: 0.25 },
+  { id: "f4", name: "Pig Meal",      unit: "kg",  qty: 3,   minQty: 10,  scoopSize: 0.5  },
 ];
 
 const SEED_TASKS: FeedingTask[] = [
-  { id: "1", label: "Feed cows (hay)", session: "AM" },
-  { id: "2", label: "Collect eggs", session: "AM" },
-  { id: "3", label: "Top up water troughs", session: "AM" },
-  { id: "4", label: "Feed chickens (pellets)", session: "AM" },
-  { id: "5", label: "Feed pigs (meal)", session: "PM" },
-  { id: "6", label: "Evening cows (hay + corn)", session: "PM" },
-  { id: "7", label: "Lock up henhouse", session: "PM" },
+  { id: "t1", label: "Feed animals", session: "AM", feedItemId: "f1", scoops: 1 },
+  { id: "t2", label: "Feed animals", session: "PM", feedItemId: "f3", scoops: 1 },
 ];
 
 export function useStore() {
@@ -66,8 +61,21 @@ export function useStore() {
   function setAnimals(next: Animal[]) { setAnimalsState(next); }
   function setFeedItems(next: FeedItem[]) { setFeedItemsState(next); }
   function setFeedingTasks(next: FeedingTask[]) { setFeedingTasksState(next); }
-  function setChecked(key: string, value: boolean) {
-    setCheckedStateState((prev) => ({ ...prev, [key]: value }));
+
+  function setChecked(key: string, value: boolean, task?: FeedingTask) {
+    // Guard: skip if value isn't actually changing
+    setCheckedStateState((prev) => {
+      if (prev[key] === value) return prev;
+      return { ...prev, [key]: value };
+    });
+
+    if (task?.feedItemId && task.scoops) {
+      setFeedItemsState((prev) => prev.map((f) => {
+        if (f.id !== task.feedItemId) return f;
+        const delta = task.scoops! * f.scoopSize;
+        return { ...f, qty: Math.max(0, f.qty + (value ? -delta : delta)) };
+      }));
+    }
   }
 
   return { animals, feedItems, feedingTasks, checkedState, setAnimals, setFeedItems, setFeedingTasks, setChecked };
