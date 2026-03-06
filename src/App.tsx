@@ -21,6 +21,8 @@ export default function App() {
       timezone={settings.timezone}
       onTabChange={setTab}
       onOpenSettings={() => setShowSettings(true)}
+      pbOnline={store.pbOnline}
+      syncMode={settings.syncMode}
     >
       <div className={tab === "dashboard" ? "" : "hidden"}>
         <Dashboard

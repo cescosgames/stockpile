@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import PocketBase from "pocketbase";
+import type { RecordModel } from "pocketbase";
 import type { Animal, FeedItem, FeedingTask, WeeklyTask, Note, CheckedState, Settings } from "../types";
 
-const STORE_VERSION = "v12";
+const STORE_VERSION = "v13"; // bumped: Settings extended with syncMode + pbUrl
 
 // True when running inside the Electron wrapper — window.electronAPI is
 // injected by electron/preload.cjs via Electron's contextBridge
 const isElectron = typeof window !== "undefined" && typeof window.electronAPI !== "undefined";
 
-// --- localStorage helpers (browser / PWA only) ---
+// --- localStorage helpers (browser / PWA / PB cache) ---
 
 function load<T>(key: string, fallback: T): T {
   try {
@@ -25,7 +27,7 @@ function save<T>(key: string, value: T): void {
 // On browser load: clear stale data if the store version has changed
 if (!isElectron) {
   if (localStorage.getItem("storeVersion") !== STORE_VERSION) {
-    ["animals", "feedItems", "feedingTasks", "checkedState", "settings"].forEach((k) =>
+    ["animals", "feedItems", "feedingTasks", "weeklyTasks", "notes", "checkedState", "settings"].forEach((k) =>
       localStorage.removeItem(k)
     );
     localStorage.setItem("storeVersion", STORE_VERSION);
@@ -103,7 +105,7 @@ const SEED_ANIMALS: Animal[] = [
 
 const SEED_FEED: FeedItem[] = [
   { id: "f1", name: "Dairy Pellets", unit: "lbs", qty: 200, minQty: 50,  maxQty: 500, scoopSize: 2   },
-  { id: "f2", name: "Chicken Feed",  unit: "lbs", qty: 12,  minQty: 15,  maxQty: 100, scoopSize: 0.5 }, // intentionally low to demo warning
+  { id: "f2", name: "Chicken Feed",  unit: "lbs", qty: 12,  minQty: 15,  maxQty: 100, scoopSize: 0.5 },
   { id: "f3", name: "Hay",           unit: "lbs", qty: 350, minQty: 100, maxQty: 600, scoopSize: 10  },
   { id: "f4", name: "Goat Mix",      unit: "kg",  qty: 40,  minQty: 10,  maxQty: 80,  scoopSize: 1   },
 ];
@@ -150,12 +152,86 @@ function pruneCheckedState(state: CheckedState): CheckedState {
 const DEFAULT_SETTINGS: Settings = {
   farmName: "Your Farm",
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  syncMode: "local",
+  pbUrl: "",
 };
+
+// --- PocketBase setup ---
+// Read sync config synchronously from localStorage at module load time.
+// isPB is a module-level constant — sync mode changes take effect after reload.
+
+function getInitialSyncConfig(): { syncMode: "local" | "network"; pbUrl: string } {
+  if (isElectron) return { syncMode: "local", pbUrl: "" };
+  try {
+    const s = load<Settings>("settings", DEFAULT_SETTINGS);
+    return { syncMode: s.syncMode ?? "local", pbUrl: s.pbUrl ?? "" };
+  } catch {
+    return { syncMode: "local", pbUrl: "" };
+  }
+}
+
+const { syncMode: INITIAL_SYNC_MODE, pbUrl: INITIAL_PB_URL } = getInitialSyncConfig();
+const isPB = INITIAL_SYNC_MODE === "network" && !!INITIAL_PB_URL;
+
+// --- PocketBase record mappers ---
+
+function pbToAnimal(r: RecordModel): Animal {
+  return {
+    id: r.id,
+    name: r.name,
+    type: r.type,
+    health: r.health as Animal["health"],
+    sex: r.sex as Animal["sex"],
+    birthday: r.birthday ?? "",
+    notes: r.notes ?? "",
+    healthLog: r.healthLog ?? [],
+    vaccineLog: r.vaccineLog ?? [],
+  };
+}
+
+function pbToFeedItem(r: RecordModel): FeedItem {
+  return {
+    id: r.id,
+    name: r.name,
+    unit: r.unit as FeedItem["unit"],
+    qty: r.qty ?? 0,
+    minQty: r.minQty ?? 0,
+    maxQty: r.maxQty ?? 0,
+    scoopSize: r.scoopSize ?? 0,
+  };
+}
+
+function pbToFeedingTask(r: RecordModel): FeedingTask {
+  return {
+    id: r.id,
+    label: r.label,
+    session: r.session as FeedingTask["session"],
+    feedItemId: r.feedItemId || undefined,
+    scoops: r.scoops || undefined,
+    perAnimal: r.perAnimal || undefined,
+    animalType: r.animalType || undefined,
+  };
+}
+
+function pbToWeeklyTask(r: RecordModel): WeeklyTask {
+  return { id: r.id, label: r.label };
+}
+
+function pbToNote(r: RecordModel): Note {
+  return { id: r.id, date: r.date, text: r.text };
+}
+
+function applyEvent<T extends { id: string }>(prev: T[], action: string, record: T): T[] {
+  if (action === "create") return [...prev, record];
+  if (action === "update") return prev.map(i => i.id === record.id ? record : i);
+  if (action === "delete") return prev.filter(i => i.id !== record.id);
+  return prev;
+}
 
 // --- Hook ---
 
 export function useStore() {
-  // Browser: initialise synchronously from localStorage
+  // Browser / PB: initialise from localStorage (PB will replace state once connected)
   // Electron: start with seed data; real data loads async below
   const [animals, setAnimalsState] = useState<Animal[]>(() =>
     isElectron ? SEED_ANIMALS : load("animals", SEED_ANIMALS)
@@ -179,6 +255,11 @@ export function useStore() {
     isElectron ? DEFAULT_SETTINGS : load("settings", DEFAULT_SETTINGS)
   );
 
+  const [pbOnline, setPbOnline] = useState(false);
+  const pbRef = useRef<PocketBase | null>(null);
+  const checkedStateRecordId = useRef<string | null>(null);
+  const settingsRecordId = useRef<string | null>(null);
+
   // electronReady: false until the async load from electron-store completes.
   // Save effects check this flag — prevents overwriting real data with seed
   // data on the first render before the load comes back.
@@ -191,14 +272,11 @@ export function useStore() {
 
     api.get("storeVersion").then((version) => {
       if (version !== STORE_VERSION) {
-        // Fresh install or version bump — seed data is already in state.
-        // Just record the version and let the save effects persist the seeds.
         api.set("storeVersion", STORE_VERSION);
         setElectronReady(true);
         return;
       }
 
-      // Load all keys in parallel, then hydrate state
       Promise.all([
         api.get("animals"),
         api.get("feedItems"),
@@ -220,10 +298,95 @@ export function useStore() {
     });
   }, []);
 
-  // Save effects — run whenever state changes, but only after initial load.
-  // In Electron, writes are debounced 400ms so rapid keystrokes produce one IPC
-  // write at the end rather than one per character. The effect cleanup cancels
-  // any pending timer if state changes again before it fires.
+  // PocketBase: connect on mount, load all collections, subscribe to real-time changes
+  useEffect(() => {
+    if (!isPB) return;
+
+    const pb = new PocketBase(INITIAL_PB_URL);
+    pbRef.current = pb;
+
+    async function init() {
+      try {
+        await pb.health.check();
+
+        const [animalRecs, feedRecs, taskRecs, weeklyRecs, noteRecs, csRecs, settingsRecs] =
+          await Promise.all([
+            pb.collection("animals").getFullList<RecordModel>({ sort: "created" }),
+            pb.collection("feedItems").getFullList<RecordModel>({ sort: "created" }),
+            pb.collection("feedingTasks").getFullList<RecordModel>({ sort: "created" }),
+            pb.collection("weeklyTasks").getFullList<RecordModel>({ sort: "created" }),
+            pb.collection("notes").getFullList<RecordModel>({ sort: "-date" }),
+            pb.collection("checkedState").getFullList<RecordModel>(),
+            pb.collection("settings").getFullList<RecordModel>(),
+          ]);
+
+        if (animalRecs.length)  setAnimalsState(animalRecs.map(pbToAnimal));
+        if (feedRecs.length)    setFeedItemsState(feedRecs.map(pbToFeedItem));
+        if (taskRecs.length)    setFeedingTasksState(taskRecs.map(pbToFeedingTask));
+        if (weeklyRecs.length)  setWeeklyTasksState(weeklyRecs.map(pbToWeeklyTask));
+        if (noteRecs.length)    setNotesState(noteRecs.map(pbToNote));
+
+        if (csRecs.length) {
+          checkedStateRecordId.current = csRecs[0].id;
+          setCheckedStateState(pruneCheckedState(csRecs[0].data ?? {}));
+        }
+
+        if (settingsRecs.length) {
+          settingsRecordId.current = settingsRecs[0].id;
+          // Merge PB settings (farmName, timezone) with local settings (syncMode, pbUrl stay local)
+          setSettingsState(prev => ({
+            ...prev,
+            farmName: settingsRecs[0].farmName ?? prev.farmName,
+            timezone: settingsRecs[0].timezone ?? prev.timezone,
+          }));
+        }
+
+        setPbOnline(true);
+
+        // Real-time subscriptions
+        pb.collection("animals").subscribe("*", ({ action, record }) =>
+          setAnimalsState(prev => applyEvent(prev, action, pbToAnimal(record)))
+        );
+        pb.collection("feedItems").subscribe("*", ({ action, record }) =>
+          setFeedItemsState(prev => applyEvent(prev, action, pbToFeedItem(record)))
+        );
+        pb.collection("feedingTasks").subscribe("*", ({ action, record }) =>
+          setFeedingTasksState(prev => applyEvent(prev, action, pbToFeedingTask(record)))
+        );
+        pb.collection("weeklyTasks").subscribe("*", ({ action, record }) =>
+          setWeeklyTasksState(prev => applyEvent(prev, action, pbToWeeklyTask(record)))
+        );
+        pb.collection("notes").subscribe("*", ({ action, record }) =>
+          setNotesState(prev => applyEvent(prev, action, pbToNote(record)))
+        );
+        pb.collection("checkedState").subscribe("*", ({ record }) => {
+          checkedStateRecordId.current = record.id;
+          setCheckedStateState(pruneCheckedState(record.data ?? {}));
+        });
+        pb.collection("settings").subscribe("*", ({ record }) => {
+          settingsRecordId.current = record.id;
+          setSettingsState(prev => ({
+            ...prev,
+            farmName: record.farmName ?? prev.farmName,
+            timezone: record.timezone ?? prev.timezone,
+          }));
+        });
+      } catch {
+        setPbOnline(false);
+      }
+    }
+
+    init();
+
+    return () => {
+      ["animals", "feedItems", "feedingTasks", "weeklyTasks", "notes", "checkedState", "settings"]
+        .forEach(name => pb.collection(name).unsubscribe());
+    };
+  }, []);
+
+  // Save effects — write to localStorage after every state change.
+  // In Electron: debounced IPC writes. In PB mode: localStorage acts as a local cache.
+  // electronReady guard prevents overwriting real data with seed data before Electron load completes.
   const DEBOUNCE_MS = 400;
 
   useEffect(() => {
@@ -289,25 +452,115 @@ export function useStore() {
     save("settings", settings);
   }, [settings, electronReady]);
 
-  function setAnimals(next: Animal[]) { setAnimalsState(next); }
-  function setFeedItems(next: FeedItem[]) { setFeedItemsState(next); }
-  function setFeedingTasks(next: FeedingTask[]) { setFeedingTasksState(next); }
-  function setWeeklyTasks(next: WeeklyTask[]) { setWeeklyTasksState(next); }
-  function setNotes(next: Note[]) { setNotesState(next); }
-  function setSettings(next: Settings) { setSettingsState(next); }
+  // --- PocketBase sync helper ---
+  // Diffs prev → next and fires create/update/delete calls against the given collection.
+
+  async function pbSyncCollection<T extends { id: string }>(
+    collectionName: string,
+    prev: T[],
+    next: T[]
+  ): Promise<void> {
+    const pb = pbRef.current!;
+    const prevIds = new Set(prev.map(i => i.id));
+    const nextIds = new Set(next.map(i => i.id));
+
+    await Promise.all([
+      ...next.filter(i => !prevIds.has(i.id)).map(item =>
+        pb.collection(collectionName).create(item)
+      ),
+      ...next.filter(i => prevIds.has(i.id)).map(item => {
+        const { id, ...body } = item as { id: string } & Record<string, unknown>;
+        return pb.collection(collectionName).update(id, body);
+      }),
+      ...prev.filter(i => !nextIds.has(i.id)).map(i =>
+        pb.collection(collectionName).delete(i.id)
+      ),
+    ]);
+  }
+
+  // --- Write functions ---
+
+  function setAnimals(next: Animal[]) {
+    if (isPB && !pbOnline) return;
+    if (isPB) pbSyncCollection("animals", animals, next).catch(() => setPbOnline(false));
+    setAnimalsState(next);
+  }
+
+  function setFeedItems(next: FeedItem[]) {
+    if (isPB && !pbOnline) return;
+    if (isPB) pbSyncCollection("feedItems", feedItems, next).catch(() => setPbOnline(false));
+    setFeedItemsState(next);
+  }
+
+  function setFeedingTasks(next: FeedingTask[]) {
+    if (isPB && !pbOnline) return;
+    if (isPB) pbSyncCollection("feedingTasks", feedingTasks, next).catch(() => setPbOnline(false));
+    setFeedingTasksState(next);
+  }
+
+  function setWeeklyTasks(next: WeeklyTask[]) {
+    if (isPB && !pbOnline) return;
+    if (isPB) pbSyncCollection("weeklyTasks", weeklyTasks, next).catch(() => setPbOnline(false));
+    setWeeklyTasksState(next);
+  }
+
+  function setNotes(next: Note[]) {
+    if (isPB && !pbOnline) return;
+    if (isPB) pbSyncCollection("notes", notes, next).catch(() => setPbOnline(false));
+    setNotesState(next);
+  }
+
+  function setSettings(next: Settings) {
+    setSettingsState(next);
+    // syncMode + pbUrl are local-only preferences — never synced to PocketBase
+    if (isPB && pbOnline) {
+      const pb = pbRef.current!;
+      const pbData = { farmName: next.farmName, timezone: next.timezone };
+      if (settingsRecordId.current) {
+        pb.collection("settings").update(settingsRecordId.current, pbData)
+          .catch(() => setPbOnline(false));
+      } else {
+        pb.collection("settings").create(pbData)
+          .then(r => { settingsRecordId.current = r.id; })
+          .catch(() => setPbOnline(false));
+      }
+    }
+  }
 
   function setChecked(key: string, value: boolean, task?: FeedingTask) {
+    if (isPB && !pbOnline) return;
+
     setCheckedStateState((prev) => {
       if (prev[key] === value) return prev;
       return { ...prev, [key]: value };
     });
+
+    // Sync checkedState blob to PocketBase
+    if (isPB && checkedState[key] !== value) {
+      const next = { ...checkedState, [key]: value };
+      const pb = pbRef.current!;
+      if (checkedStateRecordId.current) {
+        pb.collection("checkedState").update(checkedStateRecordId.current, { data: next })
+          .catch(() => setPbOnline(false));
+      } else {
+        pb.collection("checkedState").create({ data: next })
+          .then(r => { checkedStateRecordId.current = r.id; })
+          .catch(() => setPbOnline(false));
+      }
+    }
 
     if (task?.feedItemId && task.scoops) {
       setFeedItemsState((prev) =>
         prev.map((f) => {
           if (f.id !== task.feedItemId) return f;
           const delta = task.scoops! * f.scoopSize;
-          return { ...f, qty: Math.max(0, f.qty + (value ? -delta : delta)) };
+          const updated = { ...f, qty: Math.max(0, f.qty + (value ? -delta : delta)) };
+          if (isPB && pbOnline) {
+            pbRef.current!.collection("feedItems")
+              .update(f.id, { qty: updated.qty })
+              .catch(() => setPbOnline(false));
+          }
+          return updated;
         })
       );
     }
@@ -322,5 +575,9 @@ export function useStore() {
     setCheckedStateState({});
   }
 
-  return { animals, feedItems, feedingTasks, weeklyTasks, notes, checkedState, settings, setAnimals, setFeedItems, setFeedingTasks, setWeeklyTasks, setNotes, setChecked, setSettings, wipeData };
+  return {
+    animals, feedItems, feedingTasks, weeklyTasks, notes, checkedState, settings,
+    setAnimals, setFeedItems, setFeedingTasks, setWeeklyTasks, setNotes, setChecked, setSettings, wipeData,
+    pbOnline,
+  };
 }

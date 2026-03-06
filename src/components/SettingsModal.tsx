@@ -166,6 +166,51 @@ export default function SettingsModal({ settings, animals, onSave, onImportAnima
             <p className="text-xs text-text-muted">Checklist resets at midnight in this timezone.</p>
           </label>
 
+          {/* Sync */}
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-medium text-text-secondary">Sync</span>
+            <div className="flex rounded-btn border border-border overflow-hidden text-sm">
+              <button
+                type="button"
+                onClick={() => setForm(p => ({ ...p, syncMode: "local", pbUrl: p.pbUrl }))}
+                className={[
+                  "flex-1 py-2 transition-colors",
+                  form.syncMode === "local"
+                    ? "bg-accent text-white font-medium"
+                    : "bg-surface text-text-secondary hover:text-text-primary",
+                ].join(" ")}
+              >
+                Local only
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(p => ({ ...p, syncMode: "network" }))}
+                className={[
+                  "flex-1 py-2 transition-colors border-l border-border",
+                  form.syncMode === "network"
+                    ? "bg-accent text-white font-medium"
+                    : "bg-surface text-text-secondary hover:text-text-primary",
+                ].join(" ")}
+              >
+                Local network
+              </button>
+            </div>
+            {form.syncMode === "network" && (
+              <input
+                className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent font-mono"
+                value={form.pbUrl}
+                onChange={(e) => setForm(p => ({ ...p, pbUrl: e.target.value }))}
+                placeholder="http://192.168.1.42:8090"
+                spellCheck={false}
+              />
+            )}
+            <p className="text-xs text-text-muted">
+              {form.syncMode === "local"
+                ? "Data is saved on this device only."
+                : "Data syncs in real time with a PocketBase server on your local network. Changes to sync mode take effect after reloading the app."}
+            </p>
+          </div>
+
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">
               Cancel
