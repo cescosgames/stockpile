@@ -23,3 +23,7 @@ dist-electron
 *.njsproj
 *.sln
 *.sw?
+
+# PocketBase local dev binary and data
+/pocketbase
+/pb_data/

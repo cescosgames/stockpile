@@ -167,23 +167,34 @@ type Settings = {
 
 **Real-time:** PocketBase SSE subscriptions — when one device checks off a task or updates an animal, all other connected devices update instantly without polling
 
-**Offline resilience strategy (read-only fallback):**
-- On load, `useStore.ts` attempts to connect to PocketBase
-- If reachable: full live sync via subscriptions
+**Sync mode selection — Settings UI (not a build-time env var):**
+- `SettingsModal.tsx` gets a "Sync" section with a toggle: **Local only** (default) / **Local network**
+- When "Local network" is selected, a URL field appears for the Pi's address (e.g. `http://192.168.1.42:8090`)
+- Preference + URL are stored as part of `settings` in `useStore` — no `.env.local` needed, survives app restarts
+- `VITE_PB_URL` is NOT used — mode is entirely runtime-controlled
+- The offline banner ("Pi unreachable — changes won't be saved") only shows when the user has explicitly chosen Local Network mode; Local only users never see it
+- Mode switching note: switching from Local Network → Local only or vice versa should prompt the user to export first, as data is not automatically merged between backends
+
+**Offline resilience strategy (read-only fallback — Local Network mode only):**
+- On load, `useStore.ts` attempts to connect to PocketBase using the stored URL
+- If reachable: full live sync via SSE subscriptions
 - If unreachable: app loads from a local cache (last known state), shows a persistent "Offline — changes won't be saved" banner, disables all writes
 - No conflict resolution needed — writes are simply blocked when offline
 - When Pi comes back online, user refreshes and live sync resumes
 - Local cache is written to localStorage (or electron-store) as a mirror after every successful sync
 
-**`useStore.ts` is the only file that changes** — components, types, and App.tsx are untouched
+**Files that change:**
+- `useStore.ts` — adds PocketBase backend path, reads `settings.pbUrl` + `settings.syncMode` to decide which backend to use
+- `SettingsModal.tsx` — adds Sync section (toggle + URL field)
+- `src/types/index.ts` — adds `syncMode` and `pbUrl` fields to the `Settings` type
 
 **Pi setup steps (for when hardware arrives):**
 1. Flash Raspberry Pi OS Lite to SD card
 2. Enable SSH, connect to farm network
-3. Download PocketBase ARM binary, make executable
-4. Create collections: `animals`, `feedItems`, `feedingTasks`, `checkedState`, `settings`
+3. Download PocketBase v0.26.8 ARM binary, make executable
+4. Import `docs/pb_schema.json` via PocketBase Admin UI (Settings → Import collections)
 5. Create systemd service to auto-start PocketBase on boot
 6. Note the Pi's local IP — set as static in router if possible
-7. Set `VITE_PB_URL=http://[pi-ip]:8090` in `.env.local`
+7. In Stockpile Settings → Sync, choose "Local network" and enter `http://[pi-ip]:8090`
 
-**New dep when ready:** `pocketbase` (official JS SDK — ask before installing)
+**New dep:** `pocketbase` v0.26.8 JS SDK — already installed

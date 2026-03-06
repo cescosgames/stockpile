@@ -37,6 +37,7 @@
     "@types/luxon": "^3.7.1",
     "electron-store": "^11.0.2",
     "luxon": "^3.7.2",
+    "pocketbase": "^0.26.8",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
