@@ -27,3 +27,4 @@ dist-electron
 # PocketBase local dev binary and data
 /pocketbase
 /pb_data/
+/pb_migrations/

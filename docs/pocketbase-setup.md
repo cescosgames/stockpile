@@ -307,45 +307,57 @@ Add a line like this to back up every Sunday at 2 AM:
 
 ---
 
-## Local Dev Setup (for developers)
+## Local Dev Environment
 
 You don't need a Raspberry Pi to work on the PocketBase integration. PocketBase runs as a local binary on your dev machine in exactly the same way it runs on the Pi.
 
 ### 1 — Download the binary
 
-Check your architecture:
+Go to the [PocketBase releases page](https://github.com/pocketbase/pocketbase/releases) and download the latest macOS binary for your architecture. Check yours with:
 
 ```bash
 uname -m
-# arm64  → Apple Silicon
-# x86_64 → Intel
+# arm64  → Apple Silicon → download darwin_arm64
+# x86_64 → Intel        → download darwin_amd64
 ```
 
-Download the matching macOS binary (keep it out of the repo — it's in `.gitignore`):
+Drag the `pocketbase` binary (no extension) from the unzipped folder into the project root. Keep it out of the repo — it's already in `.gitignore`.
 
-```bash
-# Apple Silicon
-curl -L https://github.com/pocketbase/pocketbase/releases/download/v0.26.8/pocketbase_0.26.8_darwin_arm64.zip -o pocketbase.zip
+> **Note:** macOS may flag the binary as unverified. If it refuses to run, clear the quarantine attribute:
+> ```bash
+> xattr -d com.apple.quarantine pocketbase
+> ```
+> If that returns `No such xattr: com.apple.quarantine`, the binary was never quarantined — just run it directly.
 
-# Intel
-curl -L https://github.com/pocketbase/pocketbase/releases/download/v0.26.8/pocketbase_0.26.8_darwin_amd64.zip -o pocketbase.zip
-
-unzip pocketbase.zip && chmod +x pocketbase && rm pocketbase.zip
-```
-
-For Linux dev machines, use the `linux_arm64` or `linux_amd64` variant from the same release page.
-
-### 2 — Run it
+### 2 — Start the server
 
 ```bash
 ./pocketbase serve
 ```
 
-Admin UI: `http://127.0.0.1:8090/_/` — create an admin account, then import `docs/pb_schema.json` via **Settings → Import collections** (same steps as the Pi setup above).
+### 3 — Create an admin account
 
-### 3 — Connect the app
+Open `http://127.0.0.1:8090/_/` and create an admin account with any email and password. This is local-only — credentials don't matter.
 
-In Stockpile Settings → Sync, set the URL to `http://127.0.0.1:8090` and switch to **Local network** mode. The app will connect to your local PocketBase instance exactly as it would to the Pi.
+### 4 — Import the schema
+
+In the Admin UI: **Settings → Import collections → Upload JSON file** → select `docs/pb_schema.json` → **Review → Confirm and import**.
+
+> **Warning prompt:** PocketBase will warn about deleting fields from system collections (`_superusers`, `users`, etc.). This is expected — our schema doesn't include those system fields. Confirm and proceed.
+
+You should see 7 collections created: `animals`, `feedItems`, `feedingTasks`, `weeklyTasks`, `notes`, `checkedState`, `settings`.
+
+### 5 — Connect the app
+
+In a second terminal, start the dev server:
+
+```bash
+npm run dev
+```
+
+In the Stockpile app: **Settings (gear) → Sync → Local network → URL: `http://127.0.0.1:8090` → Save → reload the page**.
+
+The app will connect to your local PocketBase instance exactly as it would to the Pi.
 
 When you're done developing, `Ctrl+C` stops the server. Data persists in `pb_data/` between runs.
 

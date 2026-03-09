@@ -17,8 +17,10 @@ const HEALTH_DOT: Record<HealthStatus, string> = {
   Poor: "bg-danger",
 };
 
-function newId() {
-  return Date.now().toString();
+function newId(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(15)))
+    .map(b => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[b % 62])
+    .join("");
 }
 
 export default function AnimalList({ animals, setAnimals }: Props) {
