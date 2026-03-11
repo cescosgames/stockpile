@@ -3,7 +3,7 @@ import PocketBase from "pocketbase";
 import type { RecordModel } from "pocketbase";
 import type { Animal, FeedItem, FeedingTask, WeeklyTask, Note, CheckedState, Settings } from "../types";
 
-const STORE_VERSION = "v14"; // bumped: IDs updated to 15-char alphanumeric for PocketBase compatibility
+const STORE_VERSION = "v15"; // bumped: feedItem seed IDs shortened to 15 chars (PB max)
 
 // True when running inside the Electron wrapper — window.electronAPI is
 // injected by electron/preload.cjs via Electron's contextBridge
@@ -124,10 +124,10 @@ const SEED_ANIMALS: Animal[] = [
 ];
 
 const SEED_FEED: FeedItem[] = [
-  { id: "seed0feeditem001", name: "Dairy Pellets", unit: "lbs", qty: 200, minQty: 50,  maxQty: 500, scoopSize: 2   },
-  { id: "seed0feeditem002", name: "Chicken Feed",  unit: "lbs", qty: 12,  minQty: 15,  maxQty: 100, scoopSize: 0.5 },
-  { id: "seed0feeditem003", name: "Hay",           unit: "lbs", qty: 350, minQty: 100, maxQty: 600, scoopSize: 10  },
-  { id: "seed0feeditem004", name: "Goat Mix",      unit: "kg",  qty: 40,  minQty: 10,  maxQty: 80,  scoopSize: 1   },
+  { id: "seed0feeditem01", name: "Dairy Pellets", unit: "lbs", qty: 200, minQty: 50,  maxQty: 500, scoopSize: 2   },
+  { id: "seed0feeditem02", name: "Chicken Feed",  unit: "lbs", qty: 12,  minQty: 15,  maxQty: 100, scoopSize: 0.5 },
+  { id: "seed0feeditem03", name: "Hay",           unit: "lbs", qty: 350, minQty: 100, maxQty: 600, scoopSize: 10  },
+  { id: "seed0feeditem04", name: "Goat Mix",      unit: "kg",  qty: 40,  minQty: 10,  maxQty: 80,  scoopSize: 1   },
 ];
 
 const SEED_NOTES: Note[] = [
@@ -144,13 +144,13 @@ const SEED_WEEKLY: WeeklyTask[] = [
 ];
 
 const SEED_TASKS: FeedingTask[] = [
-  { id: "seed0ftask00001", label: "Feed Dairy Cows", session: "AM", feedItemId: "seed0feeditem001", scoops: 2, perAnimal: true, animalType: "Cow" },
-  { id: "seed0ftask00002", label: "Feed Dairy Cows", session: "PM", feedItemId: "seed0feeditem001", scoops: 2, perAnimal: true, animalType: "Cow" },
-  { id: "seed0ftask00003", label: "Morning Hay",     session: "AM", feedItemId: "seed0feeditem003", scoops: 3 },
-  { id: "seed0ftask00004", label: "Feed Chickens",   session: "AM", feedItemId: "seed0feeditem002", scoops: 2 },
-  { id: "seed0ftask00005", label: "Feed Chickens",   session: "PM", feedItemId: "seed0feeditem002", scoops: 2 },
-  { id: "seed0ftask00006", label: "Feed Goats",      session: "AM", feedItemId: "seed0feeditem004", scoops: 2 },
-  { id: "seed0ftask00007", label: "Feed Goats",      session: "PM", feedItemId: "seed0feeditem004", scoops: 2 },
+  { id: "seed0ftask00001", label: "Feed Dairy Cows", session: "AM", feedItemId: "seed0feeditem01", scoops: 2, perAnimal: true, animalType: "Cow" },
+  { id: "seed0ftask00002", label: "Feed Dairy Cows", session: "PM", feedItemId: "seed0feeditem01", scoops: 2, perAnimal: true, animalType: "Cow" },
+  { id: "seed0ftask00003", label: "Morning Hay",     session: "AM", feedItemId: "seed0feeditem03", scoops: 3 },
+  { id: "seed0ftask00004", label: "Feed Chickens",   session: "AM", feedItemId: "seed0feeditem02", scoops: 2 },
+  { id: "seed0ftask00005", label: "Feed Chickens",   session: "PM", feedItemId: "seed0feeditem02", scoops: 2 },
+  { id: "seed0ftask00006", label: "Feed Goats",      session: "AM", feedItemId: "seed0feeditem04", scoops: 2 },
+  { id: "seed0ftask00007", label: "Feed Goats",      session: "PM", feedItemId: "seed0feeditem04", scoops: 2 },
   { id: "seed0ftask00008", label: "Collect Eggs",    session: "AM" },
   { id: "seed0ftask00009", label: "Check Water",     session: "AM" },
   { id: "seed0ftask00010", label: "Check Water",     session: "PM" },
@@ -320,7 +320,6 @@ export function useStore() {
 
   // PocketBase: connect on mount, load all collections, subscribe to real-time changes
   useEffect(() => {
-    console.log("[PB] isPB:", isPB, "url:", INITIAL_PB_URL);
     if (!isPB) return;
 
     let active = true;
@@ -332,7 +331,6 @@ export function useStore() {
       try {
         await pb.health.check();
         if (!active) return;
-        console.log("[PB] health check passed");
 
         const [animalRecs, feedRecs, taskRecs, weeklyRecs, noteRecs, csRecs, settingsRecs] =
           await Promise.all([
@@ -345,7 +343,6 @@ export function useStore() {
             pb.collection("settings").getFullList<RecordModel>(),
           ]);
 
-        console.log("[PB] loaded — animals:", animalRecs.length, "feed:", feedRecs.length);
         // If PB is empty (first-time setup), seed it from local cache so all records exist in PB
         const localAnimals    = load<Animal[]>      ("animals",      SEED_ANIMALS);
         const localFeed       = load<FeedItem[]>    ("feedItems",    SEED_FEED);
@@ -357,16 +354,13 @@ export function useStore() {
 
         if (animalRecs.length)  setAnimalsState(animalRecs.map(pbToAnimal));
         else if (localAnimals.length) {
-          console.log("[PB] seeding animals:", localAnimals.length);
           await Promise.all(localAnimals.map(a => pb.collection("animals").create(a)));
-          console.log("[PB] animals seeded");
           setAnimalsState(localAnimals);
         }
 
         if (feedRecs.length)    setFeedItemsState(feedRecs.map(pbToFeedItem));
         else if (localFeed.length) {
-          console.log("[PB] seeding feedItems, first item:", JSON.stringify(localFeed[0]));
-          await Promise.all(localFeed.map(f => pb.collection("feedItems").create(f).catch(e => { console.error("[PB] feedItem create error:", JSON.stringify(e.response)); throw e; })));
+          await Promise.all(localFeed.map(f => pb.collection("feedItems").create(f)));
           setFeedItemsState(localFeed);
         }
 
@@ -414,6 +408,18 @@ export function useStore() {
 
         setPbOnline(true);
 
+        // Health-check interval — proactively detects offline/reconnect so the banner
+        // appears before a write is attempted, and clears automatically when Pi returns.
+        const HEALTH_INTERVAL_MS = 10_000;
+        healthTimer = setInterval(async () => {
+          try {
+            await pb.health.check();
+            setPbOnline(true);
+          } catch {
+            setPbOnline(false);
+          }
+        }, HEALTH_INTERVAL_MS);
+
         // Real-time subscriptions
         pb.collection("animals").subscribe("*", ({ action, record }) =>
           setAnimalsState(prev => applyEvent(prev, action, pbToAnimal(record)))
@@ -444,15 +450,16 @@ export function useStore() {
         });
       } catch (err) {
         if (!active) return;
-        console.error("[PocketBase] init failed:", err);
         setPbOnline(false);
       }
     }
 
+    let healthTimer: ReturnType<typeof setInterval> | undefined;
     init();
 
     return () => {
       active = false;
+      clearInterval(healthTimer);
       ["animals", "feedItems", "feedingTasks", "weeklyTasks", "notes", "checkedState", "settings"]
         .forEach(name => pb.collection(name).unsubscribe());
     };
