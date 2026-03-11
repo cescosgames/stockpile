@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import PocketBase from "pocketbase";
 import type { RecordModel } from "pocketbase";
-import type { Animal, FeedItem, FeedingTask, WeeklyTask, Note, CheckedState, Settings } from "../types";
+import type { Animal, FeedItem, FeedingTask, WeeklyTask, Note, CheckedState, Settings, Contact } from "../types";
 
-const STORE_VERSION = "v15"; // bumped: feedItem seed IDs shortened to 15 chars (PB max)
+const STORE_VERSION = "v16"; // bumped: added contacts collection
 
 // True when running inside the Electron wrapper — window.electronAPI is
 // injected by electron/preload.cjs via Electron's contextBridge
@@ -37,7 +37,7 @@ if (!isElectron) {
       }
     } catch { /* ignore */ }
 
-    ["animals", "feedItems", "feedingTasks", "weeklyTasks", "notes", "checkedState", "settings"].forEach((k) =>
+    ["animals", "feedItems", "feedingTasks", "weeklyTasks", "notes", "checkedState", "settings", "contacts"].forEach((k) =>
       localStorage.removeItem(k)
     );
 
@@ -156,6 +156,8 @@ const SEED_TASKS: FeedingTask[] = [
   { id: "seed0ftask00010", label: "Check Water",     session: "PM" },
 ];
 
+const SEED_CONTACTS: Contact[] = [];
+
 const CHECKLIST_RETENTION_DAYS = 90;
 
 function pruneCheckedState(state: CheckedState): CheckedState {
@@ -241,8 +243,12 @@ function pbToNote(r: RecordModel): Note {
   return { id: r.id, date: r.date, text: r.text };
 }
 
+function pbToContact(r: RecordModel): Contact {
+  return { id: r.id, name: r.name, role: r.role ?? "", phone: r.phone ?? "", email: r.email ?? "", notes: r.notes ?? "" };
+}
+
 function applyEvent<T extends { id: string }>(prev: T[], action: string, record: T): T[] {
-  if (action === "create") return [...prev, record];
+  if (action === "create") return prev.some(i => i.id === record.id) ? prev : [...prev, record];
   if (action === "update") return prev.map(i => i.id === record.id ? record : i);
   if (action === "delete") return prev.filter(i => i.id !== record.id);
   return prev;
@@ -273,6 +279,9 @@ export function useStore() {
   );
   const [settings, setSettingsState] = useState<Settings>(() =>
     isElectron ? DEFAULT_SETTINGS : load("settings", DEFAULT_SETTINGS)
+  );
+  const [contacts, setContactsState] = useState<Contact[]>(() =>
+    isElectron ? SEED_CONTACTS : load("contacts", SEED_CONTACTS)
   );
 
   const [pbOnline, setPbOnline] = useState(false);
@@ -305,7 +314,8 @@ export function useStore() {
         api.get("notes"),
         api.get("checkedState"),
         api.get("settings"),
-      ]).then(([a, f, t, w, n, c, s]) => {
+        api.get("contacts"),
+      ]).then(([a, f, t, w, n, c, s, co]) => {
         if (a) setAnimalsState(a as Animal[]);
         if (f) setFeedItemsState(f as FeedItem[]);
         if (t) setFeedingTasksState(t as FeedingTask[]);
@@ -313,6 +323,7 @@ export function useStore() {
         if (n) setNotesState(n as Note[]);
         if (c) setCheckedStateState(pruneCheckedState(c as CheckedState));
         if (s) setSettingsState(s as Settings);
+        if (co) setContactsState(co as Contact[]);
         setElectronReady(true);
       });
     });
@@ -332,7 +343,7 @@ export function useStore() {
         await pb.health.check();
         if (!active) return;
 
-        const [animalRecs, feedRecs, taskRecs, weeklyRecs, noteRecs, csRecs, settingsRecs] =
+        const [animalRecs, feedRecs, taskRecs, weeklyRecs, noteRecs, csRecs, settingsRecs, contactRecs] =
           await Promise.all([
             pb.collection("animals").getFullList<RecordModel>(),
             pb.collection("feedItems").getFullList<RecordModel>(),
@@ -341,6 +352,7 @@ export function useStore() {
             pb.collection("notes").getFullList<RecordModel>(),
             pb.collection("checkedState").getFullList<RecordModel>(),
             pb.collection("settings").getFullList<RecordModel>(),
+            pb.collection("contacts").getFullList<RecordModel>().catch(() => [] as RecordModel[]),
           ]);
 
         // If PB is empty (first-time setup), seed it from local cache so all records exist in PB
@@ -351,6 +363,7 @@ export function useStore() {
         const localNotes      = load<Note[]>        ("notes",        SEED_NOTES);
         const localChecked    = pruneCheckedState(load<CheckedState>("checkedState", {}));
         const localSettings   = load<Settings>      ("settings",     DEFAULT_SETTINGS);
+        const localContacts   = load<Contact[]>     ("contacts",     SEED_CONTACTS);
 
         if (animalRecs.length)  setAnimalsState(animalRecs.map(pbToAnimal));
         else if (localAnimals.length) {
@@ -380,6 +393,12 @@ export function useStore() {
         else if (localNotes.length) {
           await Promise.all(localNotes.map(n => pb.collection("notes").create(n)));
           setNotesState(localNotes);
+        }
+
+        if (contactRecs.length) setContactsState(contactRecs.map(pbToContact));
+        else if (localContacts.length) {
+          await Promise.all(localContacts.map(c => pb.collection("contacts").create(c).catch(() => {})));
+          setContactsState(localContacts);
         }
 
         if (csRecs.length) {
@@ -436,6 +455,9 @@ export function useStore() {
         pb.collection("notes").subscribe("*", ({ action, record }) =>
           setNotesState(prev => applyEvent(prev, action, pbToNote(record)))
         );
+        pb.collection("contacts").subscribe("*", ({ action, record }) =>
+          setContactsState(prev => applyEvent(prev, action, pbToContact(record)))
+        ).catch(() => { /* contacts collection not yet in PB — subscribe when schema is imported */ });
         pb.collection("checkedState").subscribe("*", ({ record }) => {
           checkedStateRecordId.current = record.id;
           setCheckedStateState(pruneCheckedState(record.data ?? {}));
@@ -460,7 +482,7 @@ export function useStore() {
     return () => {
       active = false;
       clearInterval(healthTimer);
-      ["animals", "feedItems", "feedingTasks", "weeklyTasks", "notes", "checkedState", "settings"]
+      ["animals", "feedItems", "feedingTasks", "weeklyTasks", "notes", "contacts", "checkedState", "settings"]
         .forEach(name => pb.collection(name).unsubscribe());
     };
   }, []);
@@ -533,6 +555,15 @@ export function useStore() {
     save("settings", settings);
   }, [settings, electronReady]);
 
+  useEffect(() => {
+    if (!electronReady) return;
+    if (isElectron) {
+      const t = setTimeout(() => window.electronAPI!.set("contacts", contacts), DEBOUNCE_MS);
+      return () => clearTimeout(t);
+    }
+    save("contacts", contacts);
+  }, [contacts, electronReady]);
+
   // --- PocketBase sync helper ---
   // Diffs prev → next and fires create/update/delete calls against the given collection.
 
@@ -601,6 +632,12 @@ export function useStore() {
     setNotesState(next);
   }
 
+  function setContacts(next: Contact[]) {
+    if (isPB && !pbOnline) return;
+    if (isPB) pbSyncCollection("contacts", contacts, next).catch(() => { /* contacts not yet in PB */ });
+    setContactsState(next);
+  }
+
   function setSettings(next: Settings) {
     setSettingsState(next);
     // syncMode + pbUrl are local-only preferences — never synced to PocketBase
@@ -667,11 +704,12 @@ export function useStore() {
     setWeeklyTasksState([]);
     setNotesState([]);
     setCheckedStateState({});
+    setContactsState([]);
   }
 
   return {
-    animals, feedItems, feedingTasks, weeklyTasks, notes, checkedState, settings,
-    setAnimals, setFeedItems, setFeedingTasks, setWeeklyTasks, setNotes, setChecked, setSettings, wipeData,
+    animals, feedItems, feedingTasks, weeklyTasks, notes, checkedState, settings, contacts,
+    setAnimals, setFeedItems, setFeedingTasks, setWeeklyTasks, setNotes, setChecked, setSettings, setContacts, wipeData,
     pbOnline,
   };
 }

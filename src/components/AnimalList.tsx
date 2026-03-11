@@ -19,7 +19,7 @@ const HEALTH_DOT: Record<HealthStatus, string> = {
 
 function newId(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(15)))
-    .map(b => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[b % 62])
+    .map(b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36])
     .join("");
 }
 

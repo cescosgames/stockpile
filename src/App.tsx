@@ -5,6 +5,7 @@ import Dashboard from "./components/Dashboard";
 import AnimalList from "./components/AnimalList";
 import FeedList from "./components/FeedList";
 import Checklist from "./components/Checklist";
+import ContactList from "./components/ContactList";
 import SettingsModal from "./components/SettingsModal";
 import type { Tab } from "./types";
 
@@ -53,6 +54,9 @@ export default function App() {
           setFeedingTasks={store.setFeedingTasks}
           setWeeklyTasks={store.setWeeklyTasks}
         />
+      </div>
+      <div className={tab === "contacts" ? "" : "hidden"}>
+        <ContactList contacts={store.contacts} setContacts={store.setContacts} />
       </div>
 
       {showSettings && (
