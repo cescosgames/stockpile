@@ -12,8 +12,9 @@ Built to be simple enough to use in a barn and hackable enough to adapt to your 
 - **Feed Inventory** — Track stock in kg or lbs with scoop sizes, low-stock thresholds, and target levels. Stock bars, days-remaining estimates, and inline restocking. Checks for rot/spills reminder.
 - **Feeding Checklist** — AM and PM task lists with a Weekly section for recurring chores. Communal tasks or per-animal (e.g. each dairy cow checked individually). Checking a feed task automatically deducts from inventory. Check-all button for per-animal tasks. Resets at midnight in your timezone; weekly tasks reset Monday at midnight.
 - **Dashboard** — Stat cards for animal count, low stock, and AM/PM task progress. Animal health summary, feed inventory bars, and a Farm Notes section for freeform dated entries.
-- **Settings** — Farm name and timezone. Export/import animal records as JSON for backup. Wipe all data option.
-- **Offline-first** — Everything runs locally. No account, no server, no internet required.
+- **Settings** — Farm name and timezone. Export/import animal records as JSON for backup. Wipe all data option. Sync mode toggle (Local only / Local network) with Pi URL configuration.
+- **Real-time sync** — Optional self-hosted PocketBase backend running on a Raspberry Pi. All devices on the farm network stay in sync instantly via SSE. No cloud, no subscription.
+- **Offline-first** — Works without a Pi. With a Pi, falls back to a local read-only cache if the Pi is unreachable, with an Offline banner and auto-reconnect when it comes back.
 - **PWA** — Install to home screen on any device (iOS, Android, desktop).
 - **Desktop app** — Installable as a native desktop app via Electron, with data stored in a local JSON file.
 
@@ -27,7 +28,8 @@ Built to be simple enough to use in a barn and hackable enough to adapt to your 
 | Build tool | Vite |
 | Styling | Tailwind CSS v4 (utility classes, custom `@theme`) |
 | Date/time | Luxon (timezone-aware) |
-| Persistence | localStorage (PWA) / electron-store (desktop) via `useStore` hook |
+| Persistence | localStorage (PWA) / electron-store (desktop) / PocketBase (sync) via `useStore` hook |
+| Sync | PocketBase v0.26.8 — self-hosted SQLite + SSE real-time subscriptions |
 | PWA | vite-plugin-pwa (Workbox, generateSW) |
 | Desktop | Electron + electron-builder |
 
@@ -38,8 +40,8 @@ Built to be simple enough to use in a barn and hackable enough to adapt to your 
 - [x] React web app — localStorage, single device
 - [x] PWA — installable on any device
 - [x] Electron wrapper — desktop packaging with `electron-store`
-- [ ] PocketBase backend — self-hosted on a Raspberry Pi, real-time sync across all farm devices
-- [ ] Multi-device PWA — once PocketBase is live, PWA installs on phones and tablets stay in sync
+- [x] PocketBase backend — self-hosted on a Raspberry Pi, real-time sync across all farm devices
+- [ ] Multi-device PWA — Pi is live, PWA installs on phones and tablets stay in sync
 
 ---
 
@@ -55,6 +57,19 @@ npm run dev
 ```
 
 Open `http://localhost:5173`. The app seeds with example data on first load.
+
+### With PocketBase Sync (optional)
+
+For real-time multi-device sync, run a PocketBase server on your local network (a Raspberry Pi works great). See **[docs/pocketbase-setup.md](docs/pocketbase-setup.md)** for full Pi setup instructions and a local dev guide.
+
+In short — for local dev testing:
+
+```bash
+# Drop the pocketbase binary in the project root, then:
+./pocketbase serve
+```
+
+Import `docs/pb_schema.json` via the Admin UI at `http://127.0.0.1:8090/_/`, then in the Stockpile app go to **Settings → Sync → Local network** and enter `http://127.0.0.1:8090`.
 
 ### Desktop (Electron)
 
