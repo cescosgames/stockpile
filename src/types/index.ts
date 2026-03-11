@@ -59,6 +59,8 @@ export type CheckedState = Record<string, boolean>;
 export type Settings = {
   farmName: string;
   timezone: string;
+  syncMode: "local" | "network";
+  pbUrl: string;        // PocketBase server URL, e.g. http://192.168.1.42:8090
 };
 
 export type Tab = "dashboard" | "animals" | "feed" | "checklist";

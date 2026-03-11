@@ -9,7 +9,11 @@ type Props = {
   setFeedItems: (items: FeedItem[]) => void;
 };
 
-function newId() { return Date.now().toString(); }
+function newId(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(15)))
+    .map(b => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[b % 62])
+    .join("");
+}
 
 function dailyScoops(item: FeedItem, tasks: FeedingTask[]): number {
   return tasks

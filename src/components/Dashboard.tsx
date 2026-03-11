@@ -146,7 +146,8 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
               e.preventDefault();
               if (!noteText.trim()) return;
               const today = DateTime.now().setZone(timezone).toISODate() ?? "";
-              setNotes([{ id: Date.now().toString(), date: today, text: noteText.trim() }, ...notes]);
+              const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(15))).map(b => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[b % 62]).join("");
+              setNotes([{ id: newId(), date: today, text: noteText.trim() }, ...notes]);
               setNoteText("");
               setShowNoteForm(false);
             }}

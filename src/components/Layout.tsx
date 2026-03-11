@@ -16,9 +16,11 @@ type Props = {
   onTabChange: (tab: Tab) => void;
   onOpenSettings: () => void;
   children: React.ReactNode;
+  pbOnline?: boolean;
+  syncMode?: "local" | "network";
 };
 
-export default function Layout({ active, farmName, timezone, onTabChange, onOpenSettings, children }: Props) {
+export default function Layout({ active, farmName, timezone, onTabChange, onOpenSettings, children, pbOnline, syncMode }: Props) {
   const [clock, setClock] = useState(() => DateTime.now().setZone(timezone).toFormat("h:mm a"));
 
   useEffect(() => {
@@ -82,13 +84,21 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
         })}
       </nav>
 
+      {/* Offline banner — only shown in network mode when PocketBase is unreachable */}
+      {syncMode === "network" && !pbOnline && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 flex items-center gap-2">
+          <span className="text-amber-600 text-sm font-medium">Offline</span>
+          <span className="text-amber-700 text-sm">— server unreachable. Changes won't be saved until the connection is restored.</span>
+        </div>
+      )}
+
       {/* Content */}
       <main className="flex-1 p-6 max-w-5xl w-full mx-auto">
         {children}
       </main>
 
       <footer className="py-3 px-6 flex justify-end">
-        <p className="text-xs text-text-muted">stockpile v0.1.0 / offline only</p>
+        <p className="text-xs text-text-muted">stockpile v0.1.0 / {syncMode === "network" ? (pbOnline ? "syncing" : "offline") : "local"}</p>
       </footer>
     </div>
   );

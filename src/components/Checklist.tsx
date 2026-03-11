@@ -20,7 +20,11 @@ function weekKey(tz: string) { return DateTime.now().setZone(tz).startOf("week")
 function checkedKey(date: string, session: Session, taskId: string) { return `${date}-${session}-${taskId}`; }
 function animalCheckedKey(date: string, session: Session, taskId: string, animalId: string) { return `${date}-${session}-${taskId}-${animalId}`; }
 function weeklyCheckedKey(week: string, taskId: string) { return `${week}-week-${taskId}`; }
-function newId() { return Date.now().toString(); }
+function newId(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(15)))
+    .map(b => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[b % 62])
+    .join("");
+}
 
 type TaskFormState = { label: string; session: Session | "Weekly"; feedItemId: string; scoops: string; perAnimal: boolean; animalType: string };
 const BLANK_TASK: TaskFormState = { label: "", session: "AM", feedItemId: "", scoops: "", perAnimal: false, animalType: "" };

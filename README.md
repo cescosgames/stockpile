@@ -38,8 +38,8 @@ Built to be simple enough to use in a barn and hackable enough to adapt to your 
 - [x] React web app — localStorage, single device
 - [x] PWA — installable on any device
 - [x] Electron wrapper — desktop packaging with `electron-store`
-- [ ] PocketBase backend — self-hosted sync (Raspberry Pi or local server)
-- [ ] Multi-device PWA — once PocketBase is live, PWA installs will work across the farm
+- [ ] PocketBase backend — self-hosted on a Raspberry Pi, real-time sync across all farm devices
+- [ ] Multi-device PWA — once PocketBase is live, PWA installs on phones and tablets stay in sync
 
 ---
 
@@ -93,14 +93,17 @@ Output goes to `dist-electron/`. On macOS this produces a `.dmg` installer. On W
 
 ## Architecture
 
-PWA and Electron share the same React source. The only difference is the storage backend in `useStore.ts`:
+All three clients share the same React source. The only difference between them is the storage backend in `useStore.ts`:
 
 ```
-PWA:      React → useStore → localStorage
-Electron: React → useStore → window.electronAPI (IPC) → electron-store → config.json
+PWA:        React → useStore → localStorage
+Electron:   React → useStore → window.electronAPI (IPC) → electron-store → config.json
+PocketBase: React → useStore → PocketBase SDK → Raspberry Pi (local network)
 ```
 
-When PocketBase is added, `useStore.ts` is again the only file that changes — both clients (PWA and Electron) will point at the same PocketBase instance for real-time sync across devices.
+The PocketBase layer adds real-time sync via SSE subscriptions — when one device updates an animal or checks off a task, every other connected device reflects the change instantly.
+
+**Offline resilience:** When the Pi is unreachable, the app falls back to a local cache and shows an "Offline" banner. Reads work; writes are disabled until the connection is restored.
 
 ---
 
