@@ -6,6 +6,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "dashboard", label: "Dashboard", icon: "⊞" },
   { id: "animals",   label: "Animals",   icon: "🐄" },
   { id: "feed",      label: "Feed",      icon: "🌾" },
+  { id: "contacts",  label: "Contacts",  icon: "☎" },
   { id: "checklist", label: "Checklist", icon: "✓" },
 ];
 

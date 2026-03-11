@@ -54,6 +54,15 @@ export type Note = {
   text: string;
 };
 
+export type Contact = {
+  id: string;
+  name: string;
+  role: string;
+  phone: string;
+  email: string;
+  notes: string;
+};
+
 export type CheckedState = Record<string, boolean>;
 
 export type Settings = {
@@ -63,7 +72,7 @@ export type Settings = {
   pbUrl: string;        // PocketBase server URL, e.g. http://192.168.1.42:8090
 };
 
-export type Tab = "dashboard" | "animals" | "feed" | "checklist";
+export type Tab = "dashboard" | "animals" | "feed" | "checklist" | "contacts";
 
 // Exposed by electron/preload.cjs via contextBridge — only present when running in Electron
 declare global {

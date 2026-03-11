@@ -23,6 +23,7 @@
 - **Animals** — Individual records with health status, sex, birthday (age auto-calculated), notes, health history, and vaccine log. Grouped by type in collapsible sections. Health status changes are logged automatically with optional notes.
 - **Feed Inventory** — Track stock in kg or lbs with scoop sizes, low-stock thresholds, and target levels. Stock bars, days-remaining estimates, and inline restocking. Checks for rot/spills reminder.
 - **Feeding Checklist** — AM and PM task lists with a Weekly section for recurring chores. Communal tasks or per-animal (e.g. each dairy cow checked individually). Checking a feed task automatically deducts from inventory. Check-all button for per-animal tasks. Resets at midnight in your timezone; weekly tasks reset Monday at midnight.
+- **Contacts** — Quick-reference directory for key personnel: vet, owner, manager, farmhands, or anyone else. Stores name, role, phone, email, and notes. Tap a phone number or email to dial/compose directly. Sorted by role then name.
 - **Dashboard** — Stat cards for animal count, low stock, and AM/PM task progress. Animal health summary, feed inventory bars, and a Farm Notes section for freeform dated entries.
 - **Settings** — Farm name and timezone. Export/import animal records as JSON for backup. Wipe all data option. Sync mode toggle (Local only / Local network) with Pi URL configuration.
 - **Real-time sync** — Optional self-hosted PocketBase backend running on a Raspberry Pi. All devices on the farm network stay in sync instantly via SSE. No cloud, no subscription.
