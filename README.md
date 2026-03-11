@@ -1,8 +1,20 @@
-# Stockpile: Locally Hosted / Offline Small Farm Management App
+<p align="center">
+  <img src="public/pwa-512.png" alt="Stockpile" width="120" />
+</p>
 
-An open source, offline-first farm management app for small family farms. Track livestock health, manage feed inventory, and run daily feeding checklists, all from a browser or installed as a PWA on any device.
+<h1 align="center">Stockpile</h1>
 
-Built to be simple enough to use in a barn and hackable enough to adapt to your own farm's needs.
+<p align="center">
+  <img src="https://img.shields.io/badge/status-in%20development-yellow?style=flat-square" alt="In Development" />
+</p>
+
+<p align="center">
+  An open source, offline-first farm management app for small family farms.<br/>
+  Track livestock health, manage feed inventory, and run daily feeding checklists —<br/>
+  from a browser, installed as a PWA, or synced in real time across the whole farm via a Raspberry Pi.
+</p>
+
+---
 
 ---
 
