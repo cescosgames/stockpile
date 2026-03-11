@@ -619,15 +619,18 @@ export function useStore() {
   }
 
   function setChecked(key: string, value: boolean, task?: FeedingTask) {
-    if (isPB && !pbOnline) return;
+    // Offline: allow local writes (localStorage) so farmhands can still check tasks.
+    // On reconnect, PocketBase state overwrites local — offline checks are lost on other devices.
+    // TODO (Option B): on pbOnline transition false→true, push local checkedState to PB so
+    // offline checks survive and propagate to other devices after reconnect.
 
     setCheckedStateState((prev) => {
       if (prev[key] === value) return prev;
       return { ...prev, [key]: value };
     });
 
-    // Sync checkedState blob to PocketBase
-    if (isPB && checkedState[key] !== value) {
+    // Sync checkedState blob to PocketBase (skipped when offline)
+    if (isPB && pbOnline && checkedState[key] !== value) {
       const next = { ...checkedState, [key]: value };
       const pb = pbRef.current!;
       if (checkedStateRecordId.current) {
