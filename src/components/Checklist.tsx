@@ -38,9 +38,10 @@ type SessionBlockProps = {
   feedItems: FeedItem[];
   toggle: (task: FeedingTask, animalId?: string) => void;
   requestDelete: (task: FeedingTask) => void;
+  requestEdit: (task: FeedingTask) => void;
 };
 
-function SessionBlock({ session, tasks, animals, today, checkedState, feedItems, toggle, requestDelete }: SessionBlockProps) {
+function SessionBlock({ session, tasks, animals, today, checkedState, feedItems, toggle, requestDelete, requestEdit }: SessionBlockProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   let total = 0;
@@ -108,6 +109,10 @@ function SessionBlock({ session, tasks, animals, today, checkedState, feedItems,
                     </button>
                   )}
                   <button
+                    onClick={() => requestEdit(task)}
+                    className="text-text-muted hover:text-accent text-sm px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
+                  >✎</button>
+                  <button
                     onClick={() => requestDelete(task)}
                     className="text-text-muted hover:text-danger text-sm px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
                   >✕</button>
@@ -159,6 +164,10 @@ function SessionBlock({ session, tasks, animals, today, checkedState, feedItems,
                 )}
               </div>
               <button
+                onClick={(e) => { e.stopPropagation(); requestEdit(task); }}
+                className="text-text-muted hover:text-accent text-sm px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
+              >✎</button>
+              <button
                 onClick={(e) => { e.stopPropagation(); requestDelete(task); }}
                 className="text-text-muted hover:text-danger text-sm px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
               >✕</button>
@@ -176,9 +185,10 @@ type WeeklyBlockProps = {
   checkedState: CheckedState;
   toggle: (task: WeeklyTask) => void;
   requestDelete: (task: WeeklyTask) => void;
+  requestEdit: (task: WeeklyTask) => void;
 };
 
-function WeeklyBlock({ tasks, week, checkedState, toggle, requestDelete }: WeeklyBlockProps) {
+function WeeklyBlock({ tasks, week, checkedState, toggle, requestDelete, requestEdit }: WeeklyBlockProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   const done = tasks.filter((t) => !!checkedState[weeklyCheckedKey(week, t.id)]).length;
@@ -214,6 +224,10 @@ function WeeklyBlock({ tasks, week, checkedState, toggle, requestDelete }: Weekl
                 </div>
                 <span className={`flex-1 text-sm ${checked ? "line-through text-text-muted" : "text-text-primary"}`}>{task.label}</span>
                 <button
+                  onClick={(e) => { e.stopPropagation(); requestEdit(task); }}
+                  className="text-text-muted hover:text-accent text-sm px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
+                >✎</button>
+                <button
                   onClick={(e) => { e.stopPropagation(); requestDelete(task); }}
                   className="text-text-muted hover:text-danger text-sm px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
                 >✕</button>
@@ -229,6 +243,7 @@ function WeeklyBlock({ tasks, week, checkedState, toggle, requestDelete }: Weekl
 export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animals, checkedState, timezone, setChecked, setFeedingTasks, setWeeklyTasks }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [taskForm, setTaskForm] = useState<TaskFormState>(BLANK_TASK);
+  const [editingTask, setEditingTask] = useState<FeedingTask | WeeklyTask | null>(null);
   const [pendingDelete, setPendingDelete] = useState<FeedingTask | null>(null);
   const [pendingWeeklyDelete, setPendingWeeklyDelete] = useState<WeeklyTask | null>(null);
   const today = todayKey(timezone);
@@ -254,23 +269,52 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
     setChecked(key, !checkedState[key]);
   }
 
-  function addTask(e: React.FormEvent) {
+  function requestEdit(task: FeedingTask | WeeklyTask) {
+    if ("session" in task) {
+      setTaskForm({
+        label: task.label,
+        session: task.session,
+        feedItemId: task.feedItemId ?? "",
+        scoops: task.scoops?.toString() ?? "",
+        perAnimal: task.perAnimal ?? false,
+        animalType: task.animalType ?? "",
+      });
+    } else {
+      setTaskForm({ ...BLANK_TASK, label: task.label, session: "Weekly" });
+    }
+    setEditingTask(task);
+    setShowForm(true);
+  }
+
+  function saveTask(e: React.FormEvent) {
     e.preventDefault();
     if (!taskForm.label.trim()) return;
+
+    const isEditingWeekly = editingTask && !("session" in editingTask);
+    const isEditingFeeding = editingTask && "session" in editingTask;
+
     if (taskForm.session === "Weekly") {
-      setWeeklyTasks([...weeklyTasks, { id: newId(), label: taskForm.label.trim() }]);
+      const updated: WeeklyTask = { id: editingTask?.id ?? newId(), label: taskForm.label.trim() };
+      if (isEditingFeeding) setFeedingTasks(feedingTasks.filter(t => t.id !== editingTask!.id));
+      setWeeklyTasks(isEditingWeekly
+        ? weeklyTasks.map(t => t.id === editingTask!.id ? updated : t)
+        : [...weeklyTasks, updated]);
     } else {
       if (taskForm.perAnimal && !taskForm.animalType.trim()) return;
       const task: FeedingTask = {
-        id: newId(),
+        id: editingTask?.id ?? newId(),
         label: taskForm.label.trim(),
         session: taskForm.session,
         ...(taskForm.feedItemId && taskForm.scoops ? { feedItemId: taskForm.feedItemId, scoops: parseFloat(taskForm.scoops) } : {}),
         ...(taskForm.perAnimal ? { perAnimal: true, animalType: taskForm.animalType.trim() } : {}),
       };
-      setFeedingTasks([...feedingTasks, task]);
+      if (isEditingWeekly) setWeeklyTasks(weeklyTasks.filter(t => t.id !== editingTask!.id));
+      setFeedingTasks(isEditingFeeding
+        ? feedingTasks.map(t => t.id === editingTask!.id ? task : t)
+        : [...feedingTasks, task]);
     }
     setTaskForm(BLANK_TASK);
+    setEditingTask(null);
     setShowForm(false);
   }
 
@@ -281,13 +325,19 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
           <h2 className="text-base font-semibold text-text-primary">Checklist</h2>
           <p className="text-xs text-text-muted">{DateTime.now().toFormat("EEEE, d MMMM yyyy")}</p>
         </div>
-        <button onClick={() => setShowForm((v) => !v)} className="bg-accent text-white text-sm font-medium px-5 py-3 rounded-btn hover:bg-accent-hover transition-colors">
+        <button
+          onClick={() => {
+            if (showForm) { setShowForm(false); setEditingTask(null); setTaskForm(BLANK_TASK); }
+            else setShowForm(true);
+          }}
+          className="bg-accent text-white text-sm font-medium px-5 py-3 rounded-btn hover:bg-accent-hover transition-colors"
+        >
           + Add Task
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={addTask} className="bg-surface-raised rounded-card border border-border p-4 flex flex-col gap-3">
+        <form onSubmit={saveTask} className="bg-surface-raised rounded-card border border-border p-4 flex flex-col gap-3">
           <input
             className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
             placeholder="Task label" value={taskForm.label}
@@ -339,8 +389,8 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
             </>
           )}
           <div className="flex gap-2">
-            <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-3 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
-            <button type="submit" className="flex-1 py-3 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">Add Task</button>
+            <button type="button" onClick={() => { setShowForm(false); setEditingTask(null); setTaskForm(BLANK_TASK); }} className="flex-1 py-3 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
+            <button type="submit" className="flex-1 py-3 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">{editingTask ? "Save Changes" : "Add Task"}</button>
           </div>
         </form>
       )}
@@ -350,8 +400,8 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
         <span className="text-xs text-text-muted">Resets midnight {DateTime.now().setZone(timezone).toFormat("EEEE, MMMM d")}</span>
       </div>
 
-      <SessionBlock session="AM" tasks={amTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} />
-      <SessionBlock session="PM" tasks={pmTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} />
+      <SessionBlock session="AM" tasks={amTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} requestEdit={requestEdit} />
+      <SessionBlock session="PM" tasks={pmTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} requestEdit={requestEdit} />
 
       {/* Weekly section */}
       <div className="border-t border-border" />
@@ -360,7 +410,7 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
         <span className="text-xs text-text-muted">Resets midnight {DateTime.fromISO(week).plus({ weeks: 1 }).toFormat("EEEE, MMMM d")}</span>
       </div>
 
-      <WeeklyBlock tasks={weeklyTasks} week={week} checkedState={checkedState} toggle={toggleWeekly} requestDelete={setPendingWeeklyDelete} />
+      <WeeklyBlock tasks={weeklyTasks} week={week} checkedState={checkedState} toggle={toggleWeekly} requestDelete={setPendingWeeklyDelete} requestEdit={requestEdit} />
 
       {pendingDelete && (
         <ConfirmModal
