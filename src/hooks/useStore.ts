@@ -3,7 +3,7 @@ import PocketBase from "pocketbase";
 import type { RecordModel } from "pocketbase";
 import type { Animal, FeedItem, FeedingTask, WeeklyTask, Note, CheckedState, Settings, Contact } from "../types";
 
-const STORE_VERSION = "v16"; // bumped: added contacts collection
+const STORE_VERSION = "v17"; // bumped: personal farm seed data
 
 // True when running inside the Electron wrapper — window.electronAPI is
 // injected by electron/preload.cjs via Electron's contextBridge
@@ -59,102 +59,26 @@ if (!isElectron) {
 const TODAY = new Date().toISOString().split("T")[0];
 
 const SEED_ANIMALS: Animal[] = [
-  {
-    id: "seed0animal0001", name: "Bessie", type: "Cow", health: "Good", sex: "Female", birthday: "2021-04-10",
-    notes: "Lead dairy cow. Highest producer in the herd.",
-    healthLog: [
-      { date: "2026-01-10", status: "Fair", note: "Slight limp — kept under observation" },
-      { date: "2026-01-18", status: "Good", note: "Fully recovered" },
-    ],
-    vaccineLog: [
-      { id: "seed0vax0000001", date: "2025-09-01", vaccine: "FMD", note: "Annual" },
-      { id: "seed0vax0000002", date: "2026-03-01", vaccine: "Bovine Respiratory", note: "" },
-    ],
-  },
-  {
-    id: "seed0animal0002", name: "Rosie", type: "Cow", health: "Fair", sex: "Female", birthday: "2020-06-22",
-    notes: "Reduced appetite this week. Monitoring closely.",
-    healthLog: [
-      { date: "2026-02-15", status: "Good", note: "" },
-      { date: "2026-03-03", status: "Fair", note: "Reduced appetite, keeping an eye on her" },
-    ],
-    vaccineLog: [
-      { id: "seed0vax0000003", date: "2025-09-01", vaccine: "FMD", note: "Annual" },
-    ],
-  },
-  {
-    id: "seed0animal0003", name: "Daisy", type: "Cow", health: "Good", sex: "Female", birthday: "2022-02-14",
-    notes: "",
-    healthLog: [{ date: TODAY, status: "Good", note: "" }],
-    vaccineLog: [],
-  },
-  {
-    id: "seed0animal0004", name: "Hen #1", type: "Chicken", health: "Good", sex: "Female", birthday: "2023-08-01",
-    notes: "",
-    healthLog: [{ date: TODAY, status: "Good", note: "" }],
-    vaccineLog: [{ id: "seed0vax0000004", date: "2025-11-10", vaccine: "Newcastle Disease", note: "Flock treatment" }],
-  },
-  {
-    id: "seed0animal0005", name: "Hen #2", type: "Chicken", health: "Good", sex: "Female", birthday: "2023-08-01",
-    notes: "",
-    healthLog: [{ date: TODAY, status: "Good", note: "" }],
-    vaccineLog: [],
-  },
-  {
-    id: "seed0animal0006", name: "Hen #3", type: "Chicken", health: "Poor", sex: "Female", birthday: "2023-08-01",
-    notes: "Lethargic and not eating. Isolated from the flock.",
-    healthLog: [
-      { date: "2026-03-04", status: "Good", note: "" },
-      { date: TODAY, status: "Poor", note: "Lethargic and not eating — isolated from flock" },
-    ],
-    vaccineLog: [],
-  },
-  {
-    id: "seed0animal0007", name: "Billy", type: "Goat", health: "Good", sex: "Male", birthday: "2023-03-15",
-    notes: "",
-    healthLog: [{ date: TODAY, status: "Good", note: "" }],
-    vaccineLog: [{ id: "seed0vax0000005", date: "2026-01-20", vaccine: "CDT", note: "Annual booster" }],
-  },
-  {
-    id: "seed0animal0008", name: "Nanny", type: "Goat", health: "Good", sex: "Female", birthday: "2022-11-05",
-    notes: "Expecting kids in April.",
-    healthLog: [{ date: TODAY, status: "Good", note: "" }],
-    vaccineLog: [{ id: "seed0vax0000006", date: "2026-01-20", vaccine: "CDT", note: "Annual booster" }],
-  },
+  { id: "seed0animal0001", name: "Hope",       type: "Sheep",   health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0002", name: "Faith",      type: "Sheep",   health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0003", name: "Henry",      type: "Sheep",   health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0004", name: "Little Girl", type: "Sheep",  health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0005", name: "Chicken 1",  type: "Chicken", health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0006", name: "Chicken 2",  type: "Chicken", health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0007", name: "Chicken 3",  type: "Chicken", health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0008", name: "Chicken 4",  type: "Chicken", health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0009", name: "Leaf",       type: "Goat",    health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0010", name: "Winter",     type: "Goat",    health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0011", name: "Ducky",      type: "Duck",    health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
 ];
 
-const SEED_FEED: FeedItem[] = [
-  { id: "seed0feeditem01", name: "Dairy Pellets", unit: "lbs", qty: 200, minQty: 50,  maxQty: 500, scoopSize: 2   },
-  { id: "seed0feeditem02", name: "Chicken Feed",  unit: "lbs", qty: 12,  minQty: 15,  maxQty: 100, scoopSize: 0.5 },
-  { id: "seed0feeditem03", name: "Hay",           unit: "lbs", qty: 350, minQty: 100, maxQty: 600, scoopSize: 10  },
-  { id: "seed0feeditem04", name: "Goat Mix",      unit: "kg",  qty: 40,  minQty: 10,  maxQty: 80,  scoopSize: 1   },
-];
+const SEED_FEED: FeedItem[] = [];
 
-const SEED_NOTES: Note[] = [
-  { id: "seed0note000001", date: "2026-03-01", text: "Ordered extra Chicken Feed — should arrive by end of week. Running low." },
-  { id: "seed0note000002", date: "2026-03-04", text: "Hen #3 isolated from flock. Vet visit scheduled for Friday morning." },
-  { id: "seed0note000003", date: TODAY, text: "Nanny (goat) expecting kids in April. Set up separate pen by end of month." },
-];
+const SEED_NOTES: Note[] = [];
 
-const SEED_WEEKLY: WeeklyTask[] = [
-  { id: "seed0wtask00001", label: "Replace bedding" },
-  { id: "seed0wtask00002", label: "Deep clean water troughs" },
-  { id: "seed0wtask00003", label: "Check fencing for damage" },
-  { id: "seed0wtask00004", label: "Scrub feed buckets" },
-];
+const SEED_WEEKLY: WeeklyTask[] = [];
 
-const SEED_TASKS: FeedingTask[] = [
-  { id: "seed0ftask00001", label: "Feed Dairy Cows", session: "AM", feedItemId: "seed0feeditem01", scoops: 2, perAnimal: true, animalType: "Cow" },
-  { id: "seed0ftask00002", label: "Feed Dairy Cows", session: "PM", feedItemId: "seed0feeditem01", scoops: 2, perAnimal: true, animalType: "Cow" },
-  { id: "seed0ftask00003", label: "Morning Hay",     session: "AM", feedItemId: "seed0feeditem03", scoops: 3 },
-  { id: "seed0ftask00004", label: "Feed Chickens",   session: "AM", feedItemId: "seed0feeditem02", scoops: 2 },
-  { id: "seed0ftask00005", label: "Feed Chickens",   session: "PM", feedItemId: "seed0feeditem02", scoops: 2 },
-  { id: "seed0ftask00006", label: "Feed Goats",      session: "AM", feedItemId: "seed0feeditem04", scoops: 2 },
-  { id: "seed0ftask00007", label: "Feed Goats",      session: "PM", feedItemId: "seed0feeditem04", scoops: 2 },
-  { id: "seed0ftask00008", label: "Collect Eggs",    session: "AM" },
-  { id: "seed0ftask00009", label: "Check Water",     session: "AM" },
-  { id: "seed0ftask00010", label: "Check Water",     session: "PM" },
-];
+const SEED_TASKS: FeedingTask[] = [];
 
 const SEED_CONTACTS: Contact[] = [];
 
@@ -698,6 +622,21 @@ export function useStore() {
   }
 
   function wipeData() {
+    if (isPB && pbOnline) {
+      const pb = pbRef.current!;
+      const deleteAll = (collection: string, items: { id: string }[]) =>
+        Promise.all(items.map(i => pb.collection(collection).delete(i.id).catch(() => {})));
+      deleteAll("animals", animals);
+      deleteAll("feedItems", feedItems);
+      deleteAll("feedingTasks", feedingTasks);
+      deleteAll("weeklyTasks", weeklyTasks);
+      deleteAll("notes", notes);
+      deleteAll("contacts", contacts);
+      if (checkedStateRecordId.current) {
+        pb.collection("checkedState").delete(checkedStateRecordId.current).catch(() => {});
+        checkedStateRecordId.current = null;
+      }
+    }
     setAnimalsState([]);
     setFeedItemsState([]);
     setFeedingTasksState([]);
@@ -705,6 +644,8 @@ export function useStore() {
     setNotesState([]);
     setCheckedStateState({});
     setContactsState([]);
+    // Remove storeVersion so the next page load triggers a full re-seed from SEED_*
+    if (!isElectron) localStorage.removeItem("storeVersion");
   }
 
   return {
