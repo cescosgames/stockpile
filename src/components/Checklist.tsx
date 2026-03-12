@@ -380,7 +380,7 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
                   {feedItems.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
                 </select>
                 {taskForm.feedItemId && (
-                  <input type="number" min="0.5" step="0.5" placeholder="Scoops"
+                  <input type="number" min="0.5" step="0.5" placeholder={`# ${feedItems.find(f => f.id === taskForm.feedItemId)?.servingUnit || "servings"}`}
                     className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
                     value={taskForm.scoops} onChange={(e) => setTaskForm((p) => ({ ...p, scoops: e.target.value }))}
                   />
