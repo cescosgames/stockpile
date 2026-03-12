@@ -199,6 +199,34 @@
         "max": null,
         "onlyInt": false,
         "system": false
+      },
+      {
+        "id": "fld_fi_servingunit",
+        "name": "servingUnit",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "autogeneratePattern": "",
+        "hidden": false,
+        "min": 0,
+        "max": 0,
+        "pattern": "",
+        "primaryKey": false,
+        "system": false
+      },
+      {
+        "id": "fld_fi_location",
+        "name": "location",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "autogeneratePattern": "",
+        "hidden": false,
+        "min": 0,
+        "max": 0,
+        "pattern": "",
+        "primaryKey": false,
+        "system": false
       }
     ],
     "indexes": [],

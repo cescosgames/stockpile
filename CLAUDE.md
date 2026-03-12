@@ -191,10 +191,10 @@ type Settings = {
 **Pi setup steps (for when hardware arrives):**
 1. Flash Raspberry Pi OS Lite to SD card
 2. Enable SSH, connect to farm network
-3. Download PocketBase v0.26.8 ARM binary, make executable
+3. Download PocketBase v0.36.6 ARM binary, make executable
 4. Import `docs/pb_schema.json` via PocketBase Admin UI (Settings → Import collections)
 5. Create systemd service to auto-start PocketBase on boot
 6. Note the Pi's local IP — set as static in router if possible
 7. In Stockpile Settings → Sync, choose "Local network" and enter `http://[pi-ip]:8090`
 
-**New dep:** `pocketbase` v0.26.8 JS SDK — already installed
+**New dep:** `pocketbase` v0.36.6 JS SDK — already installed

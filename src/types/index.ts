@@ -24,11 +24,13 @@ export type Animal = {
 export type FeedItem = {
   id: string;
   name: string;
-  unit: "kg" | "lbs";
-  qty: number;       // current stock in unit
-  minQty: number;    // low-stock threshold in unit
-  maxQty: number;    // target/full stock in unit (sets bar length)
-  scoopSize: number; // weight per scoop in unit
+  unit: string;        // free text — "kg", "lbs", "bales", "bottles", etc.
+  qty: number;         // current stock in unit
+  minQty: number;      // low-stock threshold in unit
+  maxQty: number;      // target/full stock in unit (sets bar length)
+  scoopSize: number;   // size of one serving in unit
+  servingUnit?: string; // display label for one serving ("scoop", "handful", "dose")
+  location?: string;   // optional storage location
 };
 
 export type Session = "AM" | "PM";

@@ -99,12 +99,13 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
                     {isLow && <span className="text-warning text-sm">⚠</span>}
                     <span className="text-sm font-semibold text-text-primary">{f.name}</span>
                   </div>
+                  {f.location && <p className="text-xs text-text-muted mt-0.5">{f.location}</p>}
                   <div className="flex gap-3 mt-1 text-xs text-text-secondary">
                     <span>{f.qty} {f.unit} in stock</span>
                     <span>·</span>
-                    <span>{f.scoopSize} {f.unit}/scoop</span>
+                    <span>{f.scoopSize} {f.unit}/{f.servingUnit || "scoop"}</span>
                     <span>·</span>
-                    <span className={isLow ? "text-warning font-medium" : ""}>{scoopsLeft} scoops left</span>
+                    <span className={isLow ? "text-warning font-medium" : ""}>{scoopsLeft} {f.servingUnit || "scoop"}s left</span>
                     {daysLeft !== null && (
                       <><span>·</span><span className={daysLeft <= 2 ? "text-danger font-medium" : ""}>{daysLeft}d remaining</span></>
                     )}
@@ -137,7 +138,7 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
                 <div className="mt-3 flex gap-2">
                   <input
                     type="number" min="0.1" step="0.1" autoFocus
-                    placeholder={`Add ${f.unit}...`}
+                    placeholder={`Add ${f.unit || "units"}...`}
                     className="flex-1 border border-border rounded px-3 py-1.5 text-sm bg-surface text-text-primary focus:outline-none focus:border-success"
                     value={restockQty} onChange={(e) => setRestockQty(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleRestock(f.id)}

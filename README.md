@@ -21,7 +21,7 @@
 ## Features
 
 - **Animals** — Individual records with health status, sex, birthday (age auto-calculated), notes, health history, and vaccine log. Grouped by type in collapsible sections. Health status changes are logged automatically with optional notes.
-- **Feed Inventory** — Track stock in kg or lbs with scoop sizes, low-stock thresholds, and target levels. Stock bars, days-remaining estimates, and inline restocking. Checks for rot/spills reminder.
+- **Feed Inventory** — Track stock in any unit (kg, lbs, bales, bottles, etc.) with configurable serving labels (scoop, handful, dose, etc.), optional storage location, low-stock thresholds, and target levels. Stock bars, days-remaining estimates, and inline restocking. Checks for rot/spills reminder.
 - **Feeding Checklist** — AM and PM task lists with a Weekly section for recurring chores. Communal tasks or per-animal (e.g. each dairy cow checked individually). Checking a feed task automatically deducts from inventory. Check-all button for per-animal tasks. Resets at midnight in your timezone; weekly tasks reset Monday at midnight.
 - **Contacts** — Quick-reference directory for key personnel: vet, owner, manager, farmhands, or anyone else. Stores name, role, phone, email, and notes. Tap a phone number or email to dial/compose directly. Sorted by role then name.
 - **Dashboard** — Stat cards for animal count, low stock, and AM/PM task progress. Animal health summary, feed inventory bars, and a Farm Notes section for freeform dated entries.
@@ -42,7 +42,7 @@
 | Styling | Tailwind CSS v4 (utility classes, custom `@theme`) |
 | Date/time | Luxon (timezone-aware) |
 | Persistence | localStorage (PWA) / electron-store (desktop) / PocketBase (sync) via `useStore` hook |
-| Sync | PocketBase v0.26.8 — self-hosted SQLite + SSE real-time subscriptions |
+| Sync | PocketBase v0.36.6 — self-hosted SQLite + SSE real-time subscriptions |
 | PWA | vite-plugin-pwa (Workbox, generateSW) |
 | Desktop | Electron + electron-builder |
 

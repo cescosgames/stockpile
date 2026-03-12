@@ -131,11 +131,11 @@ PocketBase is a single binary — no package manager needed.
 # Create a directory for PocketBase
 mkdir -p ~/pocketbase && cd ~/pocketbase
 
-# Download PocketBase v0.26.8 for 64-bit ARM (Raspberry Pi 4/5 with 64-bit OS)
-wget https://github.com/pocketbase/pocketbase/releases/download/v0.26.8/pocketbase_0.26.8_linux_arm64.zip
+# Download PocketBase v0.36.6 for 64-bit ARM (Raspberry Pi 4/5 with 64-bit OS)
+wget https://github.com/pocketbase/pocketbase/releases/download/v0.36.6/pocketbase_0.36.6_linux_arm64.zip
 
 # Unzip
-unzip pocketbase_0.26.8_linux_arm64.zip
+unzip pocketbase_0.36.6_linux_arm64.zip
 
 # Make it executable
 chmod +x pocketbase

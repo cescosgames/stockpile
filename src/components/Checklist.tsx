@@ -89,7 +89,7 @@ function SessionBlock({ session, tasks, animals, today, checkedState, feedItems,
                     <span className="text-xs text-text-muted ml-2 tabular-nums">{groupDone}/{group.length}</span>
                     {feedItem && (
                       <p className="text-xs text-text-muted mt-0.5">
-                        {task.scoops} scoop{task.scoops !== 1 ? "s" : ""} each · {feedItem.name}
+                        {task.scoops} {feedItem.servingUnit || "scoop"}{task.scoops !== 1 ? "s" : ""} each · {feedItem.name}
                       </p>
                     )}
                   </div>
@@ -154,7 +154,7 @@ function SessionBlock({ session, tasks, animals, today, checkedState, feedItems,
                 <span className={`text-sm ${checked ? "line-through text-text-muted" : "text-text-primary"}`}>{task.label}</span>
                 {feedItem && (
                   <p className="text-xs text-text-muted mt-0.5">
-                    {task.scoops} scoop{task.scoops !== 1 ? "s" : ""} · {((task.scoops ?? 0) * feedItem.scoopSize).toFixed(2)} {feedItem.unit} of {feedItem.name}
+                    {task.scoops} {feedItem.servingUnit || "scoop"}{task.scoops !== 1 ? "s" : ""} · {((task.scoops ?? 0) * feedItem.scoopSize).toFixed(2)} {feedItem.unit} of {feedItem.name}
                   </p>
                 )}
               </div>
