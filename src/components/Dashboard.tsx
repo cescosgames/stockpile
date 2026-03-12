@@ -72,6 +72,61 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
         <StatCard label="PM Tasks" value={`${pmDone}/${pmTasks.length}`} sub="completed today" accent={pmDone === pmTasks.length ? "text-success" : "text-text-primary"} />
       </div>
 
+      {/* Farm Notes */}
+      <section className="bg-surface-raised rounded-card border border-border p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-text-primary">Farm Notes</h2>
+          <button
+            onClick={() => setShowNoteForm((v) => !v)}
+            className="text-xs text-accent hover:text-accent-hover font-medium"
+          >
+            + New Note
+          </button>
+        </div>
+
+        {showNoteForm && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!noteText.trim()) return;
+              const today = DateTime.now().setZone(timezone).toISODate() ?? "";
+              const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(15))).map(b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
+              setNotes([{ id: newId(), date: today, text: noteText.trim() }, ...notes]);
+              setNoteText("");
+              setShowNoteForm(false);
+            }}
+            className="mb-4 flex flex-col gap-2"
+          >
+            <textarea
+              rows={3}
+              autoFocus
+              className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent resize-none"
+              placeholder="Write a note..."
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => { setShowNoteForm(false); setNoteText(""); }} className="flex-1 py-1.5 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
+              <button type="submit" className="flex-1 py-1.5 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">Save</button>
+            </div>
+          </form>
+        )}
+
+        <div className="flex flex-col gap-3 max-h-64 overflow-y-auto themed-scroll">
+          {notes.length === 0 && <p className="text-sm text-text-muted">No notes yet.</p>}
+          {notes.map((note) => (
+            <div key={note.id} className="flex gap-3 bg-surface-sunken rounded px-3 py-2.5">
+              <span className="text-xs text-text-muted w-24 shrink-0 pt-0.5">{DateTime.fromISO(note.date).toFormat("dd MMM yyyy")}</span>
+              <p className="text-sm text-text-primary flex-1 whitespace-pre-wrap">{note.text}</p>
+              <button
+                onClick={() => setNotes(notes.filter((n) => n.id !== note.id))}
+                className="text-text-muted hover:text-danger transition-colors shrink-0 text-xs"
+              >✕</button>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <div className="grid md:grid-cols-2 gap-6">
         {/* Animal health */}
         <section className="bg-surface-raised rounded-card border border-border p-5">
@@ -128,60 +183,6 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
         </section>
       </div>
 
-      {/* Farm Notes */}
-      <section className="bg-surface-raised rounded-card border border-border p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-text-primary">Farm Notes</h2>
-          <button
-            onClick={() => setShowNoteForm((v) => !v)}
-            className="text-xs text-accent hover:text-accent-hover font-medium"
-          >
-            + New Note
-          </button>
-        </div>
-
-        {showNoteForm && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!noteText.trim()) return;
-              const today = DateTime.now().setZone(timezone).toISODate() ?? "";
-              const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(15))).map(b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
-              setNotes([{ id: newId(), date: today, text: noteText.trim() }, ...notes]);
-              setNoteText("");
-              setShowNoteForm(false);
-            }}
-            className="mb-4 flex flex-col gap-2"
-          >
-            <textarea
-              rows={3}
-              autoFocus
-              className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent resize-none"
-              placeholder="Write a note..."
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-            />
-            <div className="flex gap-2">
-              <button type="button" onClick={() => { setShowNoteForm(false); setNoteText(""); }} className="flex-1 py-1.5 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
-              <button type="submit" className="flex-1 py-1.5 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">Save</button>
-            </div>
-          </form>
-        )}
-
-        <div className="flex flex-col gap-3 max-h-64 overflow-y-auto themed-scroll">
-          {notes.length === 0 && <p className="text-sm text-text-muted">No notes yet.</p>}
-          {notes.map((note) => (
-            <div key={note.id} className="flex gap-3 bg-surface-sunken rounded px-3 py-2.5">
-              <span className="text-xs text-text-muted w-24 shrink-0 pt-0.5">{DateTime.fromISO(note.date).toFormat("dd MMM yyyy")}</span>
-              <p className="text-sm text-text-primary flex-1 whitespace-pre-wrap">{note.text}</p>
-              <button
-                onClick={() => setNotes(notes.filter((n) => n.id !== note.id))}
-                className="text-text-muted hover:text-danger transition-colors shrink-0 text-xs"
-              >✕</button>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
