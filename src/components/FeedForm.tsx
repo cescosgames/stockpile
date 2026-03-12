@@ -7,22 +7,29 @@ type Props = {
   onClose: () => void;
 };
 
-const BLANK: Omit<FeedItem, "id"> = { name: "", unit: "kg", qty: 0, minQty: 0, maxQty: 0, scoopSize: 0.5 };
+const BLANK: Omit<FeedItem, "id"> = { name: "", unit: "", qty: 0, minQty: 0, maxQty: 0, scoopSize: 0, servingUnit: "", location: "" };
+
+const UNIT_PRESETS = ["kg", "lbs", "bales", "bottles", "units"];
+const SERVING_PRESETS = ["scoop", "handful", "flake", "dose", "tablet"];
 
 export default function FeedForm({ initial, onSave, onClose }: Props) {
   const [form, setForm] = useState<Omit<FeedItem, "id">>(
-    initial ? { name: initial.name, unit: initial.unit, qty: initial.qty, minQty: initial.minQty, maxQty: initial.maxQty, scoopSize: initial.scoopSize } : BLANK
+    initial
+      ? { name: initial.name, unit: initial.unit, qty: initial.qty, minQty: initial.minQty, maxQty: initial.maxQty, scoopSize: initial.scoopSize, servingUnit: initial.servingUnit ?? "", location: initial.location ?? "" }
+      : BLANK
   );
 
-  const setNum = (k: keyof Omit<FeedItem, "id" | "name" | "unit">, v: string) =>
+  const setNum = (k: keyof Omit<FeedItem, "id" | "name" | "unit" | "servingUnit" | "location">, v: string) =>
     setForm((p) => ({ ...p, [k]: parseFloat(v) || 0 }));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim() || form.scoopSize <= 0) return;
+    if (!form.name.trim()) return;
     onSave(form);
     onClose();
   }
+
+  const servingLabel = form.servingUnit?.trim() || "scoop";
 
   return (
     <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -35,38 +42,61 @@ export default function FeedForm({ initial, onSave, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1 col-span-2">
-              <span className="text-xs font-medium text-text-secondary">Feed Name</span>
-              <input
-                className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
-                value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                placeholder="e.g. Hay, Corn Feed" required
-              />
-            </label>
-          </div>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-text-secondary">Feed Name</span>
+            <input
+              className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
+              value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+              placeholder="e.g. Hay, Corn Feed" required
+            />
+          </label>
 
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-text-secondary">Unit</span>
-            <div className="flex gap-2">
-              {(["kg", "lbs"] as const).map((u) => (
-                <button
-                  key={u} type="button"
+            <input
+              className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
+              value={form.unit} onChange={(e) => setForm((p) => ({ ...p, unit: e.target.value }))}
+              placeholder="e.g. kg, bales, bottles" required
+            />
+            <div className="flex flex-wrap gap-1 mt-1">
+              {UNIT_PRESETS.map((u) => (
+                <button key={u} type="button"
                   onClick={() => setForm((p) => ({ ...p, unit: u }))}
-                  className={[
-                    "flex-1 py-2 rounded-btn text-sm font-medium border transition-colors",
-                    form.unit === u
-                      ? "bg-accent text-white border-accent"
-                      : "bg-surface border-border text-text-secondary hover:border-border-strong",
-                  ].join(" ")}
+                  className="px-2 py-0.5 text-xs rounded border border-border text-text-secondary hover:border-accent hover:text-accent transition-colors"
                 >{u}</button>
               ))}
             </div>
           </div>
 
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-text-secondary">Serving label <span className="font-normal text-text-muted">(optional)</span></span>
+            <input
+              className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
+              value={form.servingUnit ?? ""} onChange={(e) => setForm((p) => ({ ...p, servingUnit: e.target.value }))}
+              placeholder="scoop"
+            />
+            <div className="flex flex-wrap gap-1 mt-1">
+              {SERVING_PRESETS.map((s) => (
+                <button key={s} type="button"
+                  onClick={() => setForm((p) => ({ ...p, servingUnit: s }))}
+                  className="px-2 py-0.5 text-xs rounded border border-border text-text-secondary hover:border-accent hover:text-accent transition-colors"
+                >{s}</button>
+              ))}
+            </div>
+          </div>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-text-secondary">Storage location <span className="font-normal text-text-muted">(optional)</span></span>
+            <input
+              className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
+              value={form.location ?? ""} onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+              placeholder="e.g. Barn loft, Feed shed"
+            />
+          </label>
+
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">In stock ({form.unit})</span>
+              <span className="text-xs font-medium text-text-secondary">In stock ({form.unit || "units"})</span>
               <input
                 type="number" min="0" step="0.1"
                 className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
@@ -75,16 +105,16 @@ export default function FeedForm({ initial, onSave, onClose }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">Scoop size ({form.unit})</span>
+              <span className="text-xs font-medium text-text-secondary">Per {servingLabel} ({form.unit || "units"})</span>
               <input
-                type="number" min="0.01" step="0.01"
+                type="number" min="0" step="0.01"
                 className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
                 value={form.scoopSize || ""} onChange={(e) => setNum("scoopSize", e.target.value)}
-                placeholder="0.5" required
+                placeholder="0"
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">Low-stock at ({form.unit})</span>
+              <span className="text-xs font-medium text-text-secondary">Low-stock at ({form.unit || "units"})</span>
               <input
                 type="number" min="0" step="0.1"
                 className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
@@ -93,7 +123,7 @@ export default function FeedForm({ initial, onSave, onClose }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">Target stock ({form.unit})</span>
+              <span className="text-xs font-medium text-text-secondary">Target stock ({form.unit || "units"})</span>
               <input
                 type="number" min="0" step="0.1"
                 className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"

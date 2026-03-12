@@ -3,7 +3,7 @@ import PocketBase from "pocketbase";
 import type { RecordModel } from "pocketbase";
 import type { Animal, FeedItem, FeedingTask, WeeklyTask, Note, CheckedState, Settings, Contact } from "../types";
 
-const STORE_VERSION = "v17"; // bumped: personal farm seed data
+const STORE_VERSION = "v18"; // bumped: flexible units, servingUnit, location on FeedItem
 
 // True when running inside the Electron wrapper — window.electronAPI is
 // injected by electron/preload.cjs via Electron's contextBridge
@@ -139,11 +139,13 @@ function pbToFeedItem(r: RecordModel): FeedItem {
   return {
     id: r.id,
     name: r.name,
-    unit: r.unit as FeedItem["unit"],
+    unit: r.unit ?? "",
     qty: r.qty ?? 0,
     minQty: r.minQty ?? 0,
     maxQty: r.maxQty ?? 0,
     scoopSize: r.scoopSize ?? 0,
+    servingUnit: r.servingUnit ?? "",
+    location: r.location ?? "",
   };
 }
 
