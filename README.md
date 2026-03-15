@@ -28,7 +28,7 @@
 - **Settings** — Farm name and timezone. Export/import animal records as JSON for backup. Wipe all data option. Sync mode toggle (Local only / Local network) with Pi URL configuration.
 - **Real-time sync** — Optional self-hosted PocketBase backend running on a Raspberry Pi. All devices on the farm network stay in sync instantly via SSE. No cloud, no subscription.
 - **Offline-first** — Works without a Pi. With a Pi, falls back to a local read-only cache if the Pi is unreachable, with an Offline banner and auto-reconnect when it comes back.
-- **PWA** — Install to home screen on any device (iOS, Android, desktop). Zoom locked and safe-area insets applied so it feels native rather than web.
+- **PWA** — Install to home screen on any device (iOS, Android, desktop). Zoom locked, safe-area insets applied, oversized touch targets on action buttons, and a responsive header date (compact on mobile, full on desktop) — feels native rather than web.
 - **Desktop app** — Installable as a native desktop app via Electron, with data stored in a local JSON file.
 
 ---
