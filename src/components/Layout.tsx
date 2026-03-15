@@ -31,7 +31,7 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
     return () => clearInterval(id);
   }, [timezone]);
 
-  const today = DateTime.now().setZone(timezone).toFormat("EEEE, d MMMM yyyy");
+  const today = DateTime.now().setZone(timezone).toFormat("MM/dd/yyyy");
 
   return (
     <div className="min-h-screen flex flex-col bg-surface">

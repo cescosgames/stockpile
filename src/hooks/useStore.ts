@@ -57,26 +57,36 @@ if (!isElectron) {
 // --- Seed data ---
 
 const SEED_ANIMALS: Animal[] = [
-  { id: "seed0animal0001", name: "Hope",       type: "Sheep",   health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0002", name: "Faith",      type: "Sheep",   health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0003", name: "Henry",      type: "Sheep",   health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0004", name: "Little Girl", type: "Sheep",  health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0005", name: "Chicken 1",  type: "Chicken", health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0006", name: "Chicken 2",  type: "Chicken", health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0007", name: "Chicken 3",  type: "Chicken", health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0008", name: "Chicken 4",  type: "Chicken", health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0009", name: "Leaf",       type: "Goat",    health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0010", name: "Winter",     type: "Goat",    health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
-  { id: "seed0animal0011", name: "Ducky",      type: "Duck",    health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0001", name: "Clover",  type: "Sheep",   health: "Good", sex: "Female",  birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0002", name: "Bramble", type: "Sheep",   health: "Good", sex: "Male",    birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0003", name: "Fern",    type: "Goat",    health: "Good", sex: "Female",  birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0004", name: "Chester", type: "Goat",    health: "Fair", sex: "Male",    birthday: "", notes: "Limping on left front leg — monitor", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0005", name: "Henny",   type: "Chicken", health: "Good", sex: "Female",  birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0006", name: "Penny",   type: "Chicken", health: "Good", sex: "Female",  birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0007", name: "Rusty",   type: "Chicken", health: "Good", sex: "Male",    birthday: "", notes: "", healthLog: [], vaccineLog: [] },
+  { id: "seed0animal0008", name: "Waddles", type: "Duck",    health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
 ];
 
-const SEED_FEED: FeedItem[] = [];
+const SEED_FEED: FeedItem[] = [
+  { id: "seed0feed000001", name: "Hay",          unit: "kg", qty: 40, minQty: 10, maxQty: 80, scoopSize: 1,   servingUnit: "flake", location: "Barn" },
+  { id: "seed0feed000002", name: "Layer Pellets", unit: "kg", qty: 8,  minQty: 3,  maxQty: 20, scoopSize: 0.2, servingUnit: "scoop", location: "Feed shed" },
+  { id: "seed0feed000003", name: "Goat Mix",      unit: "kg", qty: 5,  minQty: 2,  maxQty: 15, scoopSize: 0.3, servingUnit: "scoop", location: "Feed shed" },
+];
 
 const SEED_NOTES: Note[] = [];
 
-const SEED_WEEKLY: WeeklyTask[] = [];
+const SEED_WEEKLY: WeeklyTask[] = [
+  { id: "seed0week000001", label: "Clean waterers" },
+  { id: "seed0week000002", label: "Muck out goat pen" },
+];
 
-const SEED_TASKS: FeedingTask[] = [];
+const SEED_TASKS: FeedingTask[] = [
+  { id: "seed0task000001", label: "Morning hay",   session: "AM", feedItemId: "seed0feed000001", scoops: 2, perAnimal: false },
+  { id: "seed0task000002", label: "Layer pellets", session: "AM", feedItemId: "seed0feed000002", scoops: 1, perAnimal: true, animalType: "Chicken" },
+  { id: "seed0task000003", label: "Goat mix",      session: "AM", feedItemId: "seed0feed000003", scoops: 1, perAnimal: true, animalType: "Goat" },
+  { id: "seed0task000004", label: "Evening hay",   session: "PM", feedItemId: "seed0feed000001", scoops: 2, perAnimal: false },
+  { id: "seed0task000005", label: "Check water",   session: "PM" },
+];
 
 const SEED_CONTACTS: Contact[] = [];
 
