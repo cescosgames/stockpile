@@ -145,7 +145,7 @@ For personal/family farm use, the workarounds above are fine. Sign if distributi
 - [x] Windows multi-size `.ico` with 256px — `public/icon.ico` created (16/32/48/256px); `win.icon` updated in `package.json`
 - [x] Update icon paths in `package.json` — mac uses `pwa-512.icns`, win uses `icon.ico`
 - [x] Rename `"name"` to `"stockpile"` in `package.json`
-- [ ] ~~Build `.exe` via GitHub Actions~~ — GitHub Actions workflow is paused/broken; skip for now. Build on a Windows machine directly if needed.
+- [x] Fix GitHub Actions workflow — added `--publish never` to electron-builder; was failing because tag push triggered implicit GitHub publish without `GH_TOKEN`
 - [ ] Build `.dmg` locally (see below)
 - [ ] Test install, launch, and data persistence on each platform
 - [ ] (Optional) Code sign for public distribution
