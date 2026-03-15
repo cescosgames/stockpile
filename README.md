@@ -123,17 +123,14 @@ npm run electron:build
 
 Output: `dist-electron/Stockpile-<version>.dmg`. The packaged app stores data in `~/Library/Application Support/Stockpile/` (macOS) or `%APPDATA%\Stockpile\` (Windows).
 
-**Windows** — built via GitHub Actions (no Windows machine required):
-
-Push a version tag to trigger `.github/workflows/electron-build.yml`:
+**Windows** — electron-builder cannot cross-compile `.exe` from macOS. Build on a Windows machine:
 
 ```bash
-git tag v0.1.0 && git push --tags
+npm install && npm run electron:build
+# Output: dist-electron/Stockpile Setup <version>.exe
 ```
 
-Both a `mac-dmg` and `win-installer` artifact are uploaded to the Actions run. Download `win-installer.zip`, unzip, and you have `Stockpile Setup <version>.exe`.
-
-> Note: builds are unsigned by default. macOS will warn "unidentified developer" — right-click → Open to bypass for personal use. Public distribution requires an Apple Developer certificate + notarization (macOS) and a code-signing certificate (Windows).
+> Note: builds are unsigned by default. macOS will warn "unidentified developer" — right-click → Open to bypass for personal use, or run `xattr -cr /Applications/Stockpile.app`. Public distribution requires an Apple Developer certificate + notarization (macOS) and a code-signing certificate (Windows).
 
 ---
 
@@ -163,7 +160,8 @@ The app is designed to be forked and modified. Key files:
 | `src/types/index.ts` | Data shapes — add fields your farm needs |
 | `src/index.css` | Colour palette (`@theme` block) |
 | `vite.config.ts` | PWA manifest name, icons, theme colour |
-| `public/pwa-192.png` / `public/pwa-512.png` | App icons — replace with your own artwork |
+| `public/pwa-192.png` / `public/pwa-512.png` | PWA icons — replace with your own artwork |
+| `public/pwa-512.icns` / `public/icon.ico` | Desktop icons (macOS / Windows) — regenerate from your PNG via `iconutil` |
 
 ---
 

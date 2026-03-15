@@ -142,10 +142,29 @@ For personal/family farm use, the workarounds above are fine. Sign if distributi
 ## Checklist Summary
 
 - [x] Convert icon to `.icns` (macOS) — `public/pwa-512.icns` already existed
-- [ ] Windows multi-size `.ico` with 256px — manual step (use icoconvert.com, save as `public/icon.ico`, update `win.icon` in `package.json`)
-- [x] Update icon paths in `package.json` — mac uses `pwa-512.icns`, win uses `pwa-512.png`
+- [x] Windows multi-size `.ico` with 256px — `public/icon.ico` created (16/32/48/256px); `win.icon` updated in `package.json`
+- [x] Update icon paths in `package.json` — mac uses `pwa-512.icns`, win uses `icon.ico`
 - [x] Rename `"name"` to `"stockpile"` in `package.json`
-- [x] Build `.exe` via GitHub Actions — `.github/workflows/electron-build.yml` in place; push `v*` tag to trigger
-- [ ] Build `.dmg` locally: `npm run electron:build`
+- [ ] ~~Build `.exe` via GitHub Actions~~ — GitHub Actions workflow is paused/broken; skip for now. Build on a Windows machine directly if needed.
+- [ ] Build `.dmg` locally (see below)
 - [ ] Test install, launch, and data persistence on each platform
 - [ ] (Optional) Code sign for public distribution
+
+---
+
+## Building the .dmg locally (macOS)
+
+Run from the project root:
+
+```bash
+npm run electron:build
+```
+
+Output: `dist-electron/Stockpile-0.1.0.dmg`
+
+**Notes:**
+- Requires Xcode command line tools (already present on any dev Mac)
+- `dist-electron/` is gitignored — the `.dmg` lives only on disk; upload manually to GitHub Releases
+- First-launch Gatekeeper warning is expected for unsigned builds. Workarounds:
+  - Right-click the `.dmg` → Open → "Open anyway"
+  - Or after installing: `xattr -cr /Applications/Stockpile.app`

@@ -23,6 +23,7 @@
       "electron/**/*",
       "public/pwa-512.png",
       "public/pwa-512.icns",
+      "public/icon.ico",
       "public/favicon_io/favicon.ico",
       "package.json"
     ],
@@ -31,7 +32,7 @@
       "icon": "public/pwa-512.icns"
     },
     "win": {
-      "icon": "public/pwa-512.png"
+      "icon": "public/icon.ico"
     }
   },
   "dependencies": {
