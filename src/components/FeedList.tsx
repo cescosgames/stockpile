@@ -100,26 +100,24 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
                     <span className="text-sm font-semibold text-text-primary">{f.name}</span>
                   </div>
                   {f.location && <p className="text-xs text-text-muted mt-0.5">{f.location}</p>}
-                  <div className="flex gap-3 mt-1 text-xs text-text-secondary">
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-text-secondary">
                     <span>{f.qty} {f.unit} in stock</span>
-                    <span>·</span>
-                    <span>{f.scoopSize} {f.unit}/{f.servingUnit || "scoop"}</span>
-                    <span>·</span>
                     <span className={isLow ? "text-warning font-medium" : ""}>{scoopsLeft} {f.servingUnit || "scoop"}s left</span>
+                    <span>{f.scoopSize} {f.unit}/{f.servingUnit || "scoop"}</span>
                     {daysLeft !== null && (
-                      <><span>·</span><span className={daysLeft <= 2 ? "text-danger font-medium" : ""}>{daysLeft}d remaining</span></>
+                      <span className={daysLeft <= 2 ? "text-danger font-medium" : ""}>{daysLeft}d remaining</span>
                     )}
                   </div>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <button onClick={() => { setRestocking(f.id); setRestockQty(""); }} className="text-sm text-text-muted hover:text-success px-4 py-2 rounded hover:bg-success-subtle transition-colors">
-                    + Stock
+                  <button onClick={() => { setRestocking(f.id); setRestockQty(""); }} title="Restock" className="text-sm text-text-muted hover:text-success px-2 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-success-subtle transition-colors">
+                    <span className="sm:hidden">+</span><span className="hidden sm:inline">+ Stock</span>
                   </button>
-                  <button onClick={() => { setEditing(f); setShowForm(true); }} className="text-sm text-text-muted hover:text-accent px-4 py-2 rounded hover:bg-accent-subtle transition-colors">
-                    Edit
+                  <button onClick={() => { setEditing(f); setShowForm(true); }} title="Edit" className="text-sm text-text-muted hover:text-accent px-2 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-accent-subtle transition-colors">
+                    <span className="sm:hidden">✎</span><span className="hidden sm:inline">Edit</span>
                   </button>
-                  <button onClick={() => handleDelete(f.id)} className="text-sm text-text-muted hover:text-danger px-4 py-2 rounded hover:bg-danger-subtle transition-colors">
-                    Delete
+                  <button onClick={() => handleDelete(f.id)} title="Delete" className="text-sm text-text-muted hover:text-danger px-2 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-danger-subtle transition-colors">
+                    <span className="sm:hidden">✕</span><span className="hidden sm:inline">Delete</span>
                   </button>
                 </div>
               </div>

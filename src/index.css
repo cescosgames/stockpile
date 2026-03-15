@@ -111,9 +111,14 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  padding-top: env(safe-area-inset-top);
 }
 
-button, [role="button"], select { cursor: pointer; }
+footer {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+button, [role="button"], select { cursor: pointer; touch-action: manipulation; }
 
 /* ── Themed scrollbar ────────────────────────────────────────── */
 /* Applied selectively via .themed-scroll — not global.          */

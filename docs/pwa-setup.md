@@ -31,26 +31,104 @@
 
 ---
 
+## Local dev environment (iPhone testing)
+
+**The problem:** Vite binds to `localhost` by default — your iPhone can't reach it. Service workers also require HTTPS on non-localhost origins, so a plain HTTP local IP won't work.
+
+**Solution: `mkcert` (no new npm dependencies)**
+`mkcert` is a Homebrew system tool that creates a trusted local CA and signs certs for local IPs. Once the root CA is trusted on your iPhone, the cert is fully trusted — no warnings, service workers register fine.
+
+**Prerequisites:** Be on a trusted local network (not public WiFi).
+
+**One-time setup:**
+
+```bash
+# 1. Find your Mac's local IP
+ipconfig getifaddr en0
+# → e.g. 192.168.1.42
+
+# 2. Install mkcert and create local CA (Mac only)
+brew install mkcert
+mkcert -install
+
+# 3. Generate cert for your local IP + localhost
+mkdir -p .certs && cd .certs
+mkcert 192.168.1.42 localhost 127.0.0.1
+mv "192.168.1.42+2.pem" local.pem
+mv "192.168.1.42+2-key.pem" local-key.pem
+cd ..
+```
+
+Add `.certs/` to `.gitignore`.
+
+**Update `vite.config.ts`** — add `fs` import and conditional `server` block:
+
+```ts
+import fs from 'node:fs'
+
+const certPath = '.certs/local.pem'
+const keyPath  = '.certs/local-key.pem'
+const hasLocalCert = fs.existsSync(certPath) && fs.existsSync(keyPath)
+
+export default defineConfig({
+  base: process.env.VITE_ELECTRON ? "./" : "/",
+  server: {
+    host: true,
+    ...(hasLocalCert && {
+      https: { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) },
+    }),
+  },
+  plugins: [ /* unchanged */ ]
+})
+```
+
+The `hasLocalCert` guard means it falls back to plain HTTP if certs are absent (CI, Electron builds, other devs).
+
+**Trust the CA on your iPhone:**
+
+```bash
+mkcert -CAROOT
+# → prints path to rootCA.pem, e.g.:
+# /Users/yourname/Library/Application Support/mkcert
+```
+
+AirDrop `rootCA.pem` to your iPhone:
+1. Safari downloads it → Settings > General > VPN & Device Management → install profile
+2. Settings > General > About > Certificate Trust Settings → enable full trust for the mkcert CA
+
+**Running:**
+
+```bash
+npm run dev
+# ➜  Network: https://192.168.1.42:5173/
+```
+
+Open `https://192.168.1.42:5173` in iPhone Safari — no cert warning, green lock, SW registers. Install via Share → Add to Home Screen.
+
+In Stockpile Settings on the iPhone, set sync to Local Network and enter `http://192.168.1.42:8090` for PocketBase.
+
+---
+
 ## What needs to be implemented (mobile polish checklist)
 
 ### `index.html`
 
-- [ ] Add `viewport-fit=cover` to the viewport meta tag for notch support:
+- [x] Add `viewport-fit=cover` to the viewport meta tag for notch support:
   ```html
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   ```
-- [ ] Add the Apple title meta tag:
+- [x] Add the Apple title meta tag:
   ```html
   <meta name="apple-mobile-web-app-title" content="Stockpile" />
   ```
-- [ ] Change status bar style to `black-translucent` for a more immersive feel:
+- [x] Change status bar style to `black-translucent` for a more immersive feel:
   ```html
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   ```
 
 ### `index.css`
 
-- [ ] Add `env(safe-area-inset-*)` padding so content clears the notch and home indicator:
+- [x] Add `env(safe-area-inset-*)` padding so content clears the notch and home indicator:
   ```css
   body {
     padding-top: env(safe-area-inset-top);
@@ -60,7 +138,7 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
   ```
-- [ ] Add `touch-action: manipulation` on buttons to remove the 300ms tap delay:
+- [x] Add `touch-action: manipulation` on buttons to remove the 300ms tap delay:
   ```css
   button {
     touch-action: manipulation;
@@ -69,8 +147,8 @@
 
 ### `Layout.tsx`
 
-- [ ] Tab bar: hide text labels on small screens, show icons only (responsive Tailwind classes — e.g. `hidden sm:inline` on label spans)
-- [ ] Header: consider hiding the clock or farm name on very small screens (`hidden sm:block`) to prevent overflow on 375px devices
+- [x] Tab bar: hide text labels on small screens, show icons only (responsive Tailwind classes — e.g. `hidden sm:inline` on label spans)
+- [x] Header: consider hiding the clock or farm name on very small screens (`hidden sm:block`) to prevent overflow on 375px devices
 
 ---
 

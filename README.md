@@ -84,6 +84,12 @@ In short — for local dev testing:
 
 Import `docs/pb_schema.json` via the Admin UI at `http://127.0.0.1:8090/_/`, then in the Stockpile app go to **Settings → Sync → Local network** and enter `http://127.0.0.1:8090`.
 
+### Testing on iPhone / Mobile
+
+Vite's default `localhost` is unreachable from a phone, and service workers require HTTPS on non-localhost origins. Use `mkcert` to generate a trusted local cert so Safari on iPhone can reach your dev server and install the PWA.
+
+See **[docs/pwa-setup.md — Local dev environment](docs/pwa-setup.md)** for the full step-by-step.
+
 ### Desktop (Electron)
 
 With the Vite dev server already running (`npm run dev`), open a second terminal:

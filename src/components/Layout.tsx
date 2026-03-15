@@ -36,7 +36,7 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
   return (
     <div className="min-h-screen flex flex-col bg-surface">
       {/* Header */}
-      <header className="relative bg-surface-raised border-b border-border px-6 py-4 flex items-center justify-between">
+      <header className="relative bg-surface-raised border-b border-border px-4 sm:px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-sm font-semibold text-text-primary leading-none">{farmName}</h1>
           <p className="text-xs text-text-muted mt-0.5">{today}</p>
@@ -48,7 +48,7 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
         </span>
 
         <div className="flex items-center gap-3">
-          <p className="text-base font-semibold text-text-primary tabular-nums">{clock}</p>
+          <p className="hidden sm:block text-base font-semibold text-text-primary tabular-nums">{clock}</p>
 
           <button
             onClick={onOpenSettings}
@@ -72,14 +72,14 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
               key={id}
               onClick={() => onTabChange(id)}
               className={[
-                "flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-colors",
+                "flex items-center gap-2 px-3 sm:px-5 py-4 text-sm font-medium border-b-2 transition-colors",
                 isActive
                   ? "border-accent text-accent"
                   : "border-transparent text-text-secondary hover:text-text-primary hover:border-border-strong",
               ].join(" ")}
             >
               <span>{icon}</span>
-              <span>{label}</span>
+              <span className="hidden sm:inline">{label}</span>
             </button>
           );
         })}
