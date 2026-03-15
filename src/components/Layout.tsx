@@ -78,7 +78,7 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
                   : "border-transparent text-text-secondary hover:text-text-primary hover:border-border-strong",
               ].join(" ")}
             >
-              <span>{icon}</span>
+              <span className="text-3xl sm:text-base">{icon}</span>
               <span className="hidden sm:inline">{label}</span>
             </button>
           );
