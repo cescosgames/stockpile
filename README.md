@@ -185,6 +185,8 @@ electron/
 
 Pull requests welcome. Please keep components under ~150 lines, run `npm run lint` before submitting, and read `CLAUDE.md` for full conventions and architecture notes.
 
+> **Note:** This project is still maturing as an open source repository. Standard community files (LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, issue templates, changelog) are on the to-do list.
+
 ---
 
 ## License
