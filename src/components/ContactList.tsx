@@ -91,16 +91,16 @@ export default function ContactList({ contacts, setContacts }: Props) {
                 </div>
               </div>
 
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-1 shrink-0">
                 <button
                   onClick={() => { setEditing(contact); setShowForm(true); }}
-                  className="text-xs px-3 py-1.5 rounded-btn border border-border text-text-secondary hover:border-border-strong"
+                  className="text-sm text-text-muted hover:text-accent px-4 py-2 rounded hover:bg-accent-subtle transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => setDeleting(contact)}
-                  className="text-xs px-3 py-1.5 rounded-btn border border-border text-text-secondary hover:border-danger hover:text-danger"
+                  className="text-sm text-text-muted hover:text-danger px-4 py-2 rounded hover:bg-danger-subtle transition-colors"
                 >
                   Delete
                 </button>

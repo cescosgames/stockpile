@@ -31,7 +31,8 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
     return () => clearInterval(id);
   }, [timezone]);
 
-  const today = DateTime.now().setZone(timezone).toFormat("MM/dd/yyyy");
+  const todayShort = DateTime.now().setZone(timezone).toFormat("MM/dd/yyyy");
+  const todayLong  = DateTime.now().setZone(timezone).toFormat("d MMMM yyyy");
 
   return (
     <div className="min-h-screen flex flex-col bg-surface">
@@ -39,7 +40,10 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
       <header className="relative bg-surface-raised border-b border-border px-4 sm:px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-sm font-semibold text-text-primary leading-none">{farmName}</h1>
-          <p className="text-xs text-text-muted mt-0.5">{today}</p>
+          <p className="text-xs text-text-muted mt-0.5">
+            <span className="sm:hidden">{todayShort}</span>
+            <span className="hidden sm:inline">{todayLong}</span>
+          </p>
         </div>
 
         {/* Centered wordmark */}

@@ -110,11 +110,11 @@ function SessionBlock({ session, tasks, animals, today, checkedState, feedItems,
                   )}
                   <button
                     onClick={() => requestEdit(task)}
-                    className="text-text-muted hover:text-accent text-sm px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
+                    className="text-text-muted hover:text-accent text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
                   >✎</button>
                   <button
                     onClick={() => requestDelete(task)}
-                    className="text-text-muted hover:text-danger text-sm px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
+                    className="text-text-muted hover:text-danger text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
                   >✕</button>
                 </div>
 
@@ -165,11 +165,11 @@ function SessionBlock({ session, tasks, animals, today, checkedState, feedItems,
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); requestEdit(task); }}
-                className="text-text-muted hover:text-accent text-sm px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
+                className="text-text-muted hover:text-accent text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
               >✎</button>
               <button
                 onClick={(e) => { e.stopPropagation(); requestDelete(task); }}
-                className="text-text-muted hover:text-danger text-sm px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
+                className="text-text-muted hover:text-danger text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
               >✕</button>
             </div>
           );
@@ -225,11 +225,11 @@ function WeeklyBlock({ tasks, week, checkedState, toggle, requestDelete, request
                 <span className={`flex-1 text-sm ${checked ? "line-through text-text-muted" : "text-text-primary"}`}>{task.label}</span>
                 <button
                   onClick={(e) => { e.stopPropagation(); requestEdit(task); }}
-                  className="text-text-muted hover:text-accent text-sm px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
+                  className="text-text-muted hover:text-accent text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
                 >✎</button>
                 <button
                   onClick={(e) => { e.stopPropagation(); requestDelete(task); }}
-                  className="text-text-muted hover:text-danger text-sm px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
+                  className="text-text-muted hover:text-danger text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
                 >✕</button>
               </div>
             );
