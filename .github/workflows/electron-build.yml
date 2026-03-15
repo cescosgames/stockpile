@@ -8,13 +8,15 @@ on:
 jobs:
   build-mac:
     runs-on: macos-latest
+    env:
+      VITE_ELECTRON: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm ci
-      - run: npm run electron:build
+      - run: tsc -b && vite build && electron-builder
       - uses: actions/upload-artifact@v4
         with:
           name: mac-dmg
@@ -22,13 +24,15 @@ jobs:
 
   build-win:
     runs-on: windows-latest
+    env:
+      VITE_ELECTRON: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm ci
-      - run: npm run electron:build
+      - run: npx tsc -b && npx vite build && npx electron-builder
       - uses: actions/upload-artifact@v4
         with:
           name: win-installer
