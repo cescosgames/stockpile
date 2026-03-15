@@ -56,8 +56,6 @@ if (!isElectron) {
 
 // --- Seed data ---
 
-const TODAY = new Date().toISOString().split("T")[0];
-
 const SEED_ANIMALS: Animal[] = [
   { id: "seed0animal0001", name: "Hope",       type: "Sheep",   health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
   { id: "seed0animal0002", name: "Faith",      type: "Sheep",   health: "Good", sex: "Unknown", birthday: "", notes: "", healthLog: [], vaccineLog: [] },
