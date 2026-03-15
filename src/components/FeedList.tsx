@@ -111,13 +111,13 @@ export default function FeedList({ feedItems, feedingTasks, setFeedItems }: Prop
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button onClick={() => { setRestocking(f.id); setRestockQty(""); }} title="Restock" className="text-sm text-text-muted hover:text-success px-2 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-success-subtle transition-colors">
-                    <span className="sm:hidden">+</span><span className="hidden sm:inline">+ Stock</span>
+                    <span className="sm:hidden text-2xl leading-none">+</span><span className="hidden sm:inline">+ Stock</span>
                   </button>
                   <button onClick={() => { setEditing(f); setShowForm(true); }} title="Edit" className="text-sm text-text-muted hover:text-accent px-2 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-accent-subtle transition-colors">
-                    <span className="sm:hidden">✎</span><span className="hidden sm:inline">Edit</span>
+                    <span className="sm:hidden text-2xl leading-none">✎</span><span className="hidden sm:inline">Edit</span>
                   </button>
                   <button onClick={() => handleDelete(f.id)} title="Delete" className="text-sm text-text-muted hover:text-danger px-2 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-danger-subtle transition-colors">
-                    <span className="sm:hidden">✕</span><span className="hidden sm:inline">Delete</span>
+                    <span className="sm:hidden text-2xl leading-none">✕</span><span className="hidden sm:inline">Delete</span>
                   </button>
                 </div>
               </div>
