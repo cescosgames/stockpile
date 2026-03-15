@@ -141,10 +141,11 @@ For personal/family farm use, the workarounds above are fine. Sign if distributi
 
 ## Checklist Summary
 
-- [ ] Convert icon to `.icns` (macOS) and multi-size `.ico` (Windows)
-- [ ] Update icon paths in `package.json`
-- [ ] Optionally rename `"name"` to `"stockpile"` in `package.json`
+- [x] Convert icon to `.icns` (macOS) — `public/pwa-512.icns` already existed
+- [ ] Windows multi-size `.ico` with 256px — manual step (use icoconvert.com, save as `public/icon.ico`, update `win.icon` in `package.json`)
+- [x] Update icon paths in `package.json` — mac uses `pwa-512.icns`, win uses `pwa-512.png`
+- [x] Rename `"name"` to `"stockpile"` in `package.json`
+- [x] Build `.exe` via GitHub Actions — `.github/workflows/electron-build.yml` in place; push `v*` tag to trigger
 - [ ] Build `.dmg` locally: `npm run electron:build`
-- [ ] Build `.exe` via GitHub Actions or Windows machine
 - [ ] Test install, launch, and data persistence on each platform
 - [ ] (Optional) Code sign for public distribution

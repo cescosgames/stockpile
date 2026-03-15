@@ -1,7 +1,7 @@
 {
-  "name": "farm-app",
+  "name": "stockpile",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
@@ -22,15 +22,16 @@
       "dist/**/*",
       "electron/**/*",
       "public/pwa-512.png",
+      "public/pwa-512.icns",
       "public/favicon_io/favicon.ico",
       "package.json"
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "icon": "public/pwa-512.png"
+      "icon": "public/pwa-512.icns"
     },
     "win": {
-      "icon": "public/favicon_io/favicon.ico"
+      "icon": "public/pwa-512.png"
     }
   },
   "dependencies": {

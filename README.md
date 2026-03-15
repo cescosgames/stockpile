@@ -113,15 +113,27 @@ npm run preview
 
 The `dist/` folder is a fully self-contained static site — serve it from any web server.
 
-### Desktop (.dmg / installer)
+### Desktop (.dmg / .exe)
+
+**macOS** — run locally:
 
 ```bash
 npm run electron:build
 ```
 
-Output goes to `dist-electron/`. On macOS this produces a `.dmg` installer. On Windows it produces a `.exe` installer. The packaged app stores data in `~/Library/Application Support/Stockpile/` (macOS) or `%APPDATA%\Stockpile\` (Windows).
+Output: `dist-electron/Stockpile-<version>.dmg`. The packaged app stores data in `~/Library/Application Support/Stockpile/` (macOS) or `%APPDATA%\Stockpile\` (Windows).
 
-> Note: macOS builds are unsigned by default. To distribute publicly, you'll need an Apple Developer certificate and to configure notarization in `electron-builder`.
+**Windows** — built via GitHub Actions (no Windows machine required):
+
+Push a version tag to trigger `.github/workflows/electron-build.yml`:
+
+```bash
+git tag v0.1.0 && git push --tags
+```
+
+Both a `mac-dmg` and `win-installer` artifact are uploaded to the Actions run. Download `win-installer.zip`, unzip, and you have `Stockpile Setup <version>.exe`.
+
+> Note: builds are unsigned by default. macOS will warn "unidentified developer" — right-click → Open to bypass for personal use. Public distribution requires an Apple Developer certificate + notarization (macOS) and a code-signing certificate (Windows).
 
 ---
 
