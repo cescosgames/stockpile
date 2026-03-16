@@ -231,30 +231,29 @@ nav a:hover {
   border-bottom: 1px solid var(--stone-200);
 }
 
-.pwa-install .container {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 3rem;
-  align-items: start;
+.pwa-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
 }
 
-.pwa-text h2 {
+.pwa-header h2 {
   font-size: 1.375rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
-.pwa-text .subtitle {
+.pwa-header p {
   color: var(--stone-600);
   font-size: 0.9375rem;
-  margin-bottom: 1.25rem;
+  max-width: 480px;
+  margin: 0 auto 1.25rem;
   line-height: 1.55;
 }
 
-.pwa-steps-grid {
+.pwa-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
 }
 
 .pwa-platform {
@@ -322,18 +321,6 @@ nav a:hover {
   line-height: 1.6;
 }
 
-@media (max-width: 768px) {
-  .pwa-install .container {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .pwa-steps-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* ── How it works ────────────────────────────────────────────── */
 
