@@ -28,3 +28,6 @@ dist-electron
 /pocketbase
 /pb_data/
 /pb_migrations/
+
+# Personal working notes
+docs/electron-deploy-checklist.md
