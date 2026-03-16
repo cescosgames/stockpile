@@ -4,7 +4,13 @@
 
 - `vite-plugin-pwa` configured — `generateSW`, standalone display, portrait orientation, Workbox SW
 - Icons in place: `pwa-192.png`, `pwa-512.png`, `apple-touch-icon.png`, favicon suite
-- Apple web app meta tags in `index.html` (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`)
+- Apple web app meta tags in `index.html` (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title`)
+- `viewport-fit=cover` in viewport meta tag for notch support
+- Status bar style set to `black-translucent` for immersive feel on iOS
+- `env(safe-area-inset-*)` padding in `index.css` — content clears notch and home indicator
+- `touch-action: manipulation` on buttons — removes 300ms tap delay
+- Tab bar: text labels hidden on small screens, icons only
+- Header: farm name and clock hidden on very small screens to prevent overflow on 375px devices
 - PocketBase sync — multi-device is functional via SSE subscriptions
 
 ---
@@ -35,23 +41,55 @@
 
 **The problem:** Vite binds to `localhost` by default — your iPhone can't reach it. Service workers also require HTTPS on non-localhost origins, so a plain HTTP local IP won't work.
 
-**Solution: `mkcert` (no new npm dependencies)**
-`mkcert` is a Homebrew system tool that creates a trusted local CA and signs certs for local IPs. Once the root CA is trusted on your iPhone, the cert is fully trusted — no warnings, service workers register fine.
+**Solution: `mkcert`**
+`mkcert` is a system tool that creates a trusted local CA and signs certs for local IPs. Once the root CA is trusted on your iPhone, the cert is fully trusted — no warnings, service workers register fine.
 
 **Prerequisites:** Be on a trusted local network (not public WiFi).
 
 **One-time setup:**
 
-```bash
-# 1. Find your Mac's local IP
-ipconfig getifaddr en0
-# → e.g. 192.168.1.42
+**Step 1 — Find your machine's local IP**
 
-# 2. Install mkcert and create local CA (Mac only)
+macOS:
+```bash
+ipconfig getifaddr en0
+```
+
+Windows:
+```bash
+ipconfig
+# Look for "IPv4 Address" under your active adapter
+```
+
+Linux:
+```bash
+hostname -I | awk '{print $1}'
+```
+
+Example result: `192.168.1.42`
+
+**Step 2 — Install mkcert**
+
+macOS:
+```bash
 brew install mkcert
 mkcert -install
+```
 
-# 3. Generate cert for your local IP + localhost
+Windows (winget):
+```bash
+winget install FiloSottile.mkcert
+mkcert -install
+```
+
+Linux (see [mkcert releases](https://github.com/FiloSottile/mkcert/releases) for your distro):
+```bash
+mkcert -install
+```
+
+**Step 3 — Generate a cert for your local IP**
+
+```bash
 mkdir -p .certs && cd .certs
 mkcert 192.168.1.42 localhost 127.0.0.1
 mv "192.168.1.42+2.pem" local.pem
@@ -59,9 +97,11 @@ mv "192.168.1.42+2-key.pem" local-key.pem
 cd ..
 ```
 
-Add `.certs/` to `.gitignore`.
+Replace `192.168.1.42` with your actual local IP. Add `.certs/` to `.gitignore`.
 
-**Update `vite.config.ts`** — add `fs` import and conditional `server` block:
+**Step 4 — Update `vite.config.ts`**
+
+Add `fs` import and a conditional `server` block:
 
 ```ts
 import fs from 'node:fs'
@@ -84,17 +124,21 @@ export default defineConfig({
 
 The `hasLocalCert` guard means it falls back to plain HTTP if certs are absent (CI, Electron builds, other devs).
 
-**Trust the CA on your iPhone:**
+**Step 5 — Trust the CA on your iPhone**
 
+Find the root CA file:
 ```bash
 mkcert -CAROOT
-# → prints path to rootCA.pem, e.g.:
-# /Users/yourname/Library/Application Support/mkcert
+# prints the path, e.g. /Users/yourname/Library/Application Support/mkcert/rootCA.pem
 ```
 
-AirDrop `rootCA.pem` to your iPhone:
-1. Safari downloads it → Settings > General > VPN & Device Management → install profile
-2. Settings > General > About > Certificate Trust Settings → enable full trust for the mkcert CA
+Transfer `rootCA.pem` to your iPhone:
+- **macOS:** AirDrop it
+- **Windows/Linux:** Email it to yourself, share via a local file server, or copy to a USB drive
+
+On iPhone:
+1. Open the file in Safari → Settings → General → VPN & Device Management → install profile
+2. Settings → General → About → Certificate Trust Settings → enable full trust for the mkcert CA
 
 **Running:**
 
@@ -106,49 +150,6 @@ npm run dev
 Open `https://192.168.1.42:5173` in iPhone Safari — no cert warning, green lock, SW registers. Install via Share → Add to Home Screen.
 
 In Stockpile Settings on the iPhone, set sync to Local Network and enter `http://192.168.1.42:8090` for PocketBase.
-
----
-
-## What needs to be implemented (mobile polish checklist)
-
-### `index.html`
-
-- [x] Add `viewport-fit=cover` to the viewport meta tag for notch support:
-  ```html
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  ```
-- [x] Add the Apple title meta tag:
-  ```html
-  <meta name="apple-mobile-web-app-title" content="Stockpile" />
-  ```
-- [x] Change status bar style to `black-translucent` for a more immersive feel:
-  ```html
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  ```
-
-### `index.css`
-
-- [x] Add `env(safe-area-inset-*)` padding so content clears the notch and home indicator:
-  ```css
-  body {
-    padding-top: env(safe-area-inset-top);
-  }
-
-  footer {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  ```
-- [x] Add `touch-action: manipulation` on buttons to remove the 300ms tap delay:
-  ```css
-  button {
-    touch-action: manipulation;
-  }
-  ```
-
-### `Layout.tsx`
-
-- [x] Tab bar: hide text labels on small screens, show icons only (responsive Tailwind classes — e.g. `hidden sm:inline` on label spans)
-- [x] Header: consider hiding the clock or farm name on very small screens (`hidden sm:block`) to prevent overflow on 375px devices
 
 ---
 
