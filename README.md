@@ -14,6 +14,10 @@
   from a browser, installed as a PWA, or synced in real time across the whole farm via a Raspberry Pi.
 </p>
 
+<p align="center">
+  <a href="https://stockpile-4em.pages.dev"><strong>Try it → stockpile-4em.pages.dev</strong></a>
+</p>
+
 ---
 
 ---
@@ -54,6 +58,7 @@
 - [x] PWA — installable on any device
 - [x] Electron wrapper — desktop packaging with `electron-store`
 - [x] PocketBase backend — self-hosted on a Raspberry Pi, real-time sync across all farm devices
+- [x] Landing page — static marketing site hosted on Cloudflare Pages
 - [ ] Multi-device PWA — Pi is live, PWA installs on phones and tablets stay in sync
 
 ---
@@ -62,9 +67,13 @@
 
 ### Browser / PWA
 
+The easiest way to try Stockpile is to open **[stockpile-4em.pages.dev](https://stockpile-4em.pages.dev)** in your browser. On iOS, tap **Share → Add to Home Screen**; on Android, tap **Install app** from the browser menu. No account or sign-up required — data lives on your device.
+
+To run it locally:
+
 ```bash
-git clone https://github.com/your-username/farm-app.git
-cd farm-app
+git clone https://github.com/cescosgames/stockpile.git
+cd stockpile
 npm install
 npm run dev
 ```
@@ -177,6 +186,9 @@ src/
 electron/
   main.js           # Electron main process — window, IPC handlers, electron-store
   preload.cjs       # Context bridge — exposes window.electronAPI to React
+landing/
+  index.html        # Static marketing/landing page (separate Cloudflare Pages project)
+  style.css
 ```
 
 ---
