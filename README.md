@@ -196,7 +196,7 @@ Contributions are welcome — this is a real app running on a real farm, and out
 
 - **Documentation** — setup guides, inline code comments, architecture explanations. The Pi setup flow and sync docs especially could use more real-world detail.
 - **Hardware testing** — Stockpile's sync backend is designed to run on cheap single-board computers. If you have a Libre Computer, ASUS Tinker Board, Orange Pi, or similar, testing PocketBase + Stockpile on it and reporting what works (or doesn't) is genuinely useful.
-- **New features** — currently in progress: monthly tasks, miscellaneous one-off tasks, and a dashboard notes author field. Other ideas welcome — open an issue to discuss.
+- **New features** — currently in progress: monthly tasks, miscellaneous one-off tasks, and a dashboard notes author field. Further out: offline sync — work without the Pi, reconnect, and merge changes. Other ideas welcome — open an issue to discuss.
 - **Bug reports** — open an issue with your device, OS, and steps to reproduce.
 
 **Before submitting a PR:** keep components under ~150 lines, run `npm run lint`, and read `CLAUDE.md` for full conventions and architecture notes.
