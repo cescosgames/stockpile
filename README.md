@@ -26,9 +26,9 @@
 
 - **Animals** — Individual records with health status, sex, birthday (age auto-calculated), notes, health history, and vaccine log. Grouped by type in collapsible sections. Health status changes are logged automatically with optional notes.
 - **Feed Inventory** — Track stock in any unit (kg, lbs, bales, bottles, etc.) with configurable serving labels (scoop, handful, dose, etc.), optional storage location, low-stock thresholds, and target levels. Stock bars, days-remaining estimates, and inline restocking. Checks for rot/spills reminder.
-- **Feeding Checklist** — AM and PM task lists with a Weekly section for recurring chores. Communal tasks or per-animal (e.g. each dairy cow checked individually). Checking a feed task automatically deducts from inventory. Check-all button for per-animal tasks. Full inline edit — change label, session, feed association, or scoops without deleting and recreating. Resets at midnight in your timezone; weekly tasks reset Monday at midnight.
+- **Feeding Checklist** — AM and PM task lists with Weekly, Monthly, and One-off sections. Communal tasks or per-animal (e.g. each dairy cow checked individually). Checking a feed task automatically deducts from inventory. Check-all button for per-animal tasks. Full inline edit — change label, session, feed association, or scoops without deleting and recreating. Resets at midnight in your timezone; weekly tasks reset Monday, monthly tasks reset the 1st of the month; one-off tasks persist until deleted.
 - **Contacts** — Quick-reference directory for key personnel: vet, owner, manager, farmhands, or anyone else. Stores name, role, phone, email, and notes. Tap a phone number or email to dial/compose directly. Sorted by role then name.
-- **Dashboard** — Stat cards for animal count, low stock, and AM/PM task progress. Animal health summary, feed inventory bars, and a Farm Notes section for freeform dated entries.
+- **Dashboard** — Stat cards for animal count, low stock, and AM/PM task progress. Animal health summary, feed inventory bars, and a Farm Notes section for freeform dated entries with optional author attribution.
 - **Settings** — Farm name and timezone. Export/import animal records as JSON for backup. Wipe all data option. Sync mode toggle (Local only / Local network) with Pi URL configuration.
 - **Real-time sync** — Optional self-hosted PocketBase backend running on a Raspberry Pi. All devices on the farm network stay in sync instantly via SSE. No cloud, no subscription.
 - **Offline-first** — Works without a Pi. With a Pi, falls back to a local read-only cache if the Pi is unreachable, with an Offline banner and auto-reconnect when it comes back.
@@ -190,9 +190,16 @@ landing/
 
 ## Contributing
 
-Pull requests welcome. Please keep components under ~150 lines, run `npm run lint` before submitting, and read `CLAUDE.md` for full conventions and architecture notes.
+Contributions are welcome — this is a real app running on a real farm, and outside help makes it better.
 
-> **Note:** This project is still maturing as an open source repository. Standard community files (LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, issue templates, changelog) are on the to-do list.
+**Ways to contribute:**
+
+- **Documentation** — setup guides, inline code comments, architecture explanations. The Pi setup flow and sync docs especially could use more real-world detail.
+- **Hardware testing** — Stockpile's sync backend is designed to run on cheap single-board computers. If you have a Libre Computer, ASUS Tinker Board, Orange Pi, or similar, testing PocketBase + Stockpile on it and reporting what works (or doesn't) is genuinely useful.
+- **New features** — ideas welcome, open an issue to discuss. Further out: offline sync — work without the Pi, reconnect, and merge changes.
+- **Bug reports** — open an issue with your device, OS, and steps to reproduce.
+
+**Before submitting a PR:** keep components under ~150 lines, run `npm run lint`, and read `CLAUDE.md` for full conventions and architecture notes.
 
 ---
 

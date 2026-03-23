@@ -103,16 +103,29 @@ type WeeklyTask = {
   label: string;       // simple label — no feed/session/per-animal
 };
 
+type MonthlyTask = {
+  id: string;
+  label: string;       // resets midnight 1st of each month
+};
+
+type OneOffTask = {
+  id: string;
+  label: string;
+  done: boolean;       // persists until deleted
+};
+
 type Note = {
   id: string;
   date: string;        // ISO date
   text: string;
+  author?: string;     // optional farm hand attribution
 };
 
 // CheckedState keys:
 //   daily communal:   `${date}-${session}-${taskId}`
 //   daily per-animal: `${date}-${session}-${taskId}-${animalId}`
 //   weekly:           `${mondayDate}-week-${taskId}`
+//   monthly:          `${firstOfMonthDate}-month-${taskId}`
 type CheckedState = Record<string, boolean>;
 
 type Settings = {
@@ -122,7 +135,7 @@ type Settings = {
 ```
 
 ## Store Versioning
-`STORE_VERSION` constant in `useStore.ts` (currently `"v12"`). Bump it whenever the data shape changes — on load it clears all localStorage keys and reseeds. `checkedState` is also pruned to 90 days on every load to keep storage lean.
+`STORE_VERSION` constant in `useStore.ts` (currently `"v19"`). Bump it whenever the data shape changes — on load it clears all localStorage keys and reseeds. `checkedState` is also pruned to 90 days on every load to keep storage lean.
 
 ## Dev Commands
 - `npm run dev` — start Vite dev server (browser / PWA)

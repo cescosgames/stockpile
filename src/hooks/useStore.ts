@@ -174,7 +174,7 @@ function pbToWeeklyTask(r: RecordModel): WeeklyTask {
 }
 
 function pbToNote(r: RecordModel): Note {
-  return { id: r.id, date: r.date, text: r.text };
+  return { id: r.id, date: r.date, text: r.text, ...(r.author ? { author: r.author } : {}) };
 }
 
 function pbToContact(r: RecordModel): Contact {
