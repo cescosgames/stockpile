@@ -43,6 +43,7 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string 
 export default function Dashboard({ animals, feedItems, feedingTasks, checkedState, timezone, notes, setNotes }: Props) {
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [noteText, setNoteText] = useState("");
+  const [noteAuthor, setNoteAuthor] = useState("");
   const today = todayKey(timezone);
   const totalAnimals = animals.length;
   const lowStock = feedItems.filter((f) => f.qty <= f.minQty);
@@ -91,8 +92,10 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
               if (!noteText.trim()) return;
               const today = DateTime.now().setZone(timezone).toISODate() ?? "";
               const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(15))).map(b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
-              setNotes([{ id: newId(), date: today, text: noteText.trim() }, ...notes]);
+              const note = { id: newId(), date: today, text: noteText.trim(), ...(noteAuthor.trim() ? { author: noteAuthor.trim() } : {}) };
+              setNotes([note, ...notes]);
               setNoteText("");
+              setNoteAuthor("");
               setShowNoteForm(false);
             }}
             className="mb-4 flex flex-col gap-2"
@@ -105,8 +108,14 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
             />
+            <input
+              className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
+              placeholder="Author (optional)"
+              value={noteAuthor}
+              onChange={(e) => setNoteAuthor(e.target.value)}
+            />
             <div className="flex gap-2">
-              <button type="button" onClick={() => { setShowNoteForm(false); setNoteText(""); }} className="flex-1 py-1.5 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
+              <button type="button" onClick={() => { setShowNoteForm(false); setNoteText(""); setNoteAuthor(""); }} className="flex-1 py-1.5 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
               <button type="submit" className="flex-1 py-1.5 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">Save</button>
             </div>
           </form>
@@ -116,7 +125,10 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
           {notes.length === 0 && <p className="text-sm text-text-muted">No notes yet.</p>}
           {notes.map((note) => (
             <div key={note.id} className="flex gap-3 bg-surface-sunken rounded px-3 py-2.5">
-              <span className="text-xs text-text-muted w-24 shrink-0 pt-0.5">{DateTime.fromISO(note.date).toFormat("dd MMM yyyy")}</span>
+              <div className="text-xs text-text-muted w-24 shrink-0 pt-0.5">
+                <div>{DateTime.fromISO(note.date).toFormat("dd MMM yyyy")}</div>
+                {note.author && <div className="mt-0.5 font-medium">{note.author}</div>}
+              </div>
               <p className="text-sm text-text-primary flex-1 whitespace-pre-wrap">{note.text}</p>
               <button
                 onClick={() => setNotes(notes.filter((n) => n.id !== note.id))}

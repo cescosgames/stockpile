@@ -46,6 +46,8 @@ export default function App() {
         <Checklist
           feedingTasks={store.feedingTasks}
           weeklyTasks={store.weeklyTasks}
+          monthlyTasks={store.monthlyTasks}
+          oneOffTasks={store.oneOffTasks}
           feedItems={store.feedItems}
           animals={store.animals}
           checkedState={store.checkedState}
@@ -53,6 +55,8 @@ export default function App() {
           setChecked={store.setChecked}
           setFeedingTasks={store.setFeedingTasks}
           setWeeklyTasks={store.setWeeklyTasks}
+          setMonthlyTasks={store.setMonthlyTasks}
+          setOneOffTasks={store.setOneOffTasks}
         />
       </div>
       <div className={tab === "contacts" ? "" : "hidden"}>

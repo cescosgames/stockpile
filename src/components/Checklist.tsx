@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { DateTime } from "luxon";
-import type { Animal, FeedingTask, FeedItem, WeeklyTask, CheckedState, Session } from "../types";
+import type { Animal, FeedingTask, FeedItem, WeeklyTask, MonthlyTask, OneOffTask, CheckedState, Session } from "../types";
 import ConfirmModal from "./ConfirmModal";
 
 type Props = {
   feedingTasks: FeedingTask[];
   weeklyTasks: WeeklyTask[];
+  monthlyTasks: MonthlyTask[];
+  oneOffTasks: OneOffTask[];
   feedItems: FeedItem[];
   animals: Animal[];
   checkedState: CheckedState;
@@ -13,20 +15,24 @@ type Props = {
   setChecked: (key: string, value: boolean, task?: FeedingTask) => void;
   setFeedingTasks: (tasks: FeedingTask[]) => void;
   setWeeklyTasks: (tasks: WeeklyTask[]) => void;
+  setMonthlyTasks: (tasks: MonthlyTask[]) => void;
+  setOneOffTasks: (tasks: OneOffTask[]) => void;
 };
 
 function todayKey(tz: string) { return DateTime.now().setZone(tz).toISODate() ?? ""; }
 function weekKey(tz: string) { return DateTime.now().setZone(tz).startOf("week").toISODate() ?? ""; }
+function monthKey(tz: string) { return DateTime.now().setZone(tz).startOf("month").toISODate() ?? ""; }
 function checkedKey(date: string, session: Session, taskId: string) { return `${date}-${session}-${taskId}`; }
 function animalCheckedKey(date: string, session: Session, taskId: string, animalId: string) { return `${date}-${session}-${taskId}-${animalId}`; }
 function weeklyCheckedKey(week: string, taskId: string) { return `${week}-week-${taskId}`; }
+function monthlyCheckedKey(month: string, taskId: string) { return `${month}-month-${taskId}`; }
 function newId(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(15)))
     .map(b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36])
     .join("");
 }
 
-type TaskFormState = { label: string; session: Session | "Weekly"; feedItemId: string; scoops: string; perAnimal: boolean; animalType: string };
+type TaskFormState = { label: string; session: Session | "Weekly" | "Monthly" | "One-off"; feedItemId: string; scoops: string; perAnimal: boolean; animalType: string };
 const BLANK_TASK: TaskFormState = { label: "", session: "AM", feedItemId: "", scoops: "", perAnimal: false, animalType: "" };
 
 type SessionBlockProps = {
@@ -240,14 +246,132 @@ function WeeklyBlock({ tasks, week, checkedState, toggle, requestDelete, request
   );
 }
 
-export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animals, checkedState, timezone, setChecked, setFeedingTasks, setWeeklyTasks }: Props) {
+type MonthlyBlockProps = {
+  tasks: MonthlyTask[];
+  month: string;
+  checkedState: CheckedState;
+  toggle: (task: MonthlyTask) => void;
+  requestDelete: (task: MonthlyTask) => void;
+  requestEdit: (task: MonthlyTask) => void;
+};
+
+function MonthlyBlock({ tasks, month, checkedState, toggle, requestDelete, requestEdit }: MonthlyBlockProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const done = tasks.filter((t) => !!checkedState[monthlyCheckedKey(month, t.id)]).length;
+  const allDone = tasks.length > 0 && done === tasks.length;
+
+  return (
+    <section className="bg-surface-raised rounded-card border border-border overflow-hidden">
+      <button
+        onClick={() => setCollapsed((v) => !v)}
+        className={`w-full px-5 py-3 flex items-center gap-3 transition-colors select-none ${collapsed ? "bg-surface-raised" : allDone ? "bg-success-subtle" : "bg-surface-sunken"} ${collapsed ? "" : "border-b border-border"}`}
+      >
+        <span className="text-text-muted text-sm shrink-0" style={{ display: "inline-block", transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.15s" }}>▼</span>
+        <span className="text-sm font-semibold text-text-primary">Monthly</span>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${allDone ? "bg-success text-white" : "bg-surface text-text-muted border border-border"}`}>
+          {done}/{tasks.length}
+        </span>
+        {allDone && <span className="text-xs text-success font-medium ml-auto">All done ✓</span>}
+      </button>
+
+      {!collapsed && (
+        <div className="divide-y divide-border">
+          {tasks.length === 0 && <p className="px-5 py-4 text-sm text-text-muted">No monthly tasks.</p>}
+          {tasks.map((task) => {
+            const checked = !!checkedState[monthlyCheckedKey(month, task.id)];
+            return (
+              <div
+                key={task.id}
+                className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-surface-sunken transition-colors ${checked ? "opacity-60" : ""}`}
+                onClick={() => toggle(task)}
+              >
+                <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${checked ? "bg-success border-success" : "border-border-strong"}`}>
+                  {checked && <span className="text-white text-xs font-bold">✓</span>}
+                </div>
+                <span className={`flex-1 text-sm ${checked ? "line-through text-text-muted" : "text-text-primary"}`}>{task.label}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); requestEdit(task); }}
+                  className="text-text-muted hover:text-accent text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
+                >✎</button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); requestDelete(task); }}
+                  className="text-text-muted hover:text-danger text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
+                >✕</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+type OneOffBlockProps = {
+  tasks: OneOffTask[];
+  toggle: (task: OneOffTask) => void;
+  requestDelete: (task: OneOffTask) => void;
+  requestEdit: (task: OneOffTask) => void;
+};
+
+function OneOffBlock({ tasks, toggle, requestDelete, requestEdit }: OneOffBlockProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const done = tasks.filter((t) => t.done).length;
+  const allDone = tasks.length > 0 && done === tasks.length;
+
+  return (
+    <section className="bg-surface-raised rounded-card border border-border overflow-hidden">
+      <button
+        onClick={() => setCollapsed((v) => !v)}
+        className={`w-full px-5 py-3 flex items-center gap-3 transition-colors select-none ${collapsed ? "bg-surface-raised" : allDone ? "bg-success-subtle" : "bg-surface-sunken"} ${collapsed ? "" : "border-b border-border"}`}
+      >
+        <span className="text-text-muted text-sm shrink-0" style={{ display: "inline-block", transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.15s" }}>▼</span>
+        <span className="text-sm font-semibold text-text-primary">One-off</span>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${allDone && tasks.length > 0 ? "bg-success text-white" : "bg-surface text-text-muted border border-border"}`}>
+          {done}/{tasks.length}
+        </span>
+      </button>
+
+      {!collapsed && (
+        <div className="divide-y divide-border">
+          {tasks.length === 0 && <p className="px-5 py-4 text-sm text-text-muted">No one-off tasks.</p>}
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-surface-sunken transition-colors ${task.done ? "opacity-60" : ""}`}
+              onClick={() => toggle(task)}
+            >
+              <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${task.done ? "bg-success border-success" : "border-border-strong"}`}>
+                {task.done && <span className="text-white text-xs font-bold">✓</span>}
+              </div>
+              <span className={`flex-1 text-sm ${task.done ? "line-through text-text-muted" : "text-text-primary"}`}>{task.label}</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); requestEdit(task); }}
+                className="text-text-muted hover:text-accent text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-accent-subtle transition-colors shrink-0"
+              >✎</button>
+              <button
+                onClick={(e) => { e.stopPropagation(); requestDelete(task); }}
+                className="text-text-muted hover:text-danger text-2xl sm:text-sm leading-none px-3 py-2 rounded hover:bg-danger-subtle transition-colors shrink-0"
+              >✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default function Checklist({ feedingTasks, weeklyTasks, monthlyTasks, oneOffTasks, feedItems, animals, checkedState, timezone, setChecked, setFeedingTasks, setWeeklyTasks, setMonthlyTasks, setOneOffTasks }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [taskForm, setTaskForm] = useState<TaskFormState>(BLANK_TASK);
-  const [editingTask, setEditingTask] = useState<FeedingTask | WeeklyTask | null>(null);
+  const [editingTask, setEditingTask] = useState<FeedingTask | WeeklyTask | MonthlyTask | OneOffTask | null>(null);
+  const [editingTaskType, setEditingTaskType] = useState<"feeding" | "weekly" | "monthly" | "oneoff" | null>(null);
   const [pendingDelete, setPendingDelete] = useState<FeedingTask | null>(null);
   const [pendingWeeklyDelete, setPendingWeeklyDelete] = useState<WeeklyTask | null>(null);
+  const [pendingMonthlyDelete, setPendingMonthlyDelete] = useState<MonthlyTask | null>(null);
+  const [pendingOneOffDelete, setPendingOneOffDelete] = useState<OneOffTask | null>(null);
   const today = todayKey(timezone);
   const week = weekKey(timezone);
+  const month = monthKey(timezone);
 
   const amTasks = feedingTasks.filter((t) => t.session === "AM");
   const pmTasks = feedingTasks.filter((t) => t.session === "PM");
@@ -269,52 +393,61 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
     setChecked(key, !checkedState[key]);
   }
 
-  function requestEdit(task: FeedingTask | WeeklyTask) {
-    if ("session" in task) {
-      setTaskForm({
-        label: task.label,
-        session: task.session,
-        feedItemId: task.feedItemId ?? "",
-        scoops: task.scoops?.toString() ?? "",
-        perAnimal: task.perAnimal ?? false,
-        animalType: task.animalType ?? "",
-      });
-    } else {
+  function requestEdit(task: FeedingTask | WeeklyTask | MonthlyTask | OneOffTask, type: "feeding" | "weekly" | "monthly" | "oneoff") {
+    if (type === "feeding") {
+      const t = task as FeedingTask;
+      setTaskForm({ label: t.label, session: t.session, feedItemId: t.feedItemId ?? "", scoops: t.scoops?.toString() ?? "", perAnimal: t.perAnimal ?? false, animalType: t.animalType ?? "" });
+    } else if (type === "weekly") {
       setTaskForm({ ...BLANK_TASK, label: task.label, session: "Weekly" });
+    } else if (type === "monthly") {
+      setTaskForm({ ...BLANK_TASK, label: task.label, session: "Monthly" });
+    } else {
+      setTaskForm({ ...BLANK_TASK, label: task.label, session: "One-off" });
     }
     setEditingTask(task);
+    setEditingTaskType(type);
     setShowForm(true);
   }
 
   function saveTask(e: React.FormEvent) {
     e.preventDefault();
     if (!taskForm.label.trim()) return;
+    const id = editingTask?.id ?? newId();
+    const label = taskForm.label.trim();
 
-    const isEditingWeekly = editingTask && !("session" in editingTask);
-    const isEditingFeeding = editingTask && "session" in editingTask;
+    // Remove from old collection when changing type
+    if (editingTaskType === "feeding" && taskForm.session !== "AM" && taskForm.session !== "PM")
+      setFeedingTasks(feedingTasks.filter(t => t.id !== editingTask!.id));
+    if (editingTaskType === "weekly" && taskForm.session !== "Weekly")
+      setWeeklyTasks(weeklyTasks.filter(t => t.id !== editingTask!.id));
+    if (editingTaskType === "monthly" && taskForm.session !== "Monthly")
+      setMonthlyTasks(monthlyTasks.filter(t => t.id !== editingTask!.id));
+    if (editingTaskType === "oneoff" && taskForm.session !== "One-off")
+      setOneOffTasks(oneOffTasks.filter(t => t.id !== editingTask!.id));
 
-    if (taskForm.session === "Weekly") {
-      const updated: WeeklyTask = { id: editingTask?.id ?? newId(), label: taskForm.label.trim() };
-      if (isEditingFeeding) setFeedingTasks(feedingTasks.filter(t => t.id !== editingTask!.id));
-      setWeeklyTasks(isEditingWeekly
-        ? weeklyTasks.map(t => t.id === editingTask!.id ? updated : t)
-        : [...weeklyTasks, updated]);
-    } else {
+    if (taskForm.session === "AM" || taskForm.session === "PM") {
       if (taskForm.perAnimal && !taskForm.animalType.trim()) return;
       const task: FeedingTask = {
-        id: editingTask?.id ?? newId(),
-        label: taskForm.label.trim(),
-        session: taskForm.session,
+        id, label, session: taskForm.session,
         ...(taskForm.feedItemId && taskForm.scoops ? { feedItemId: taskForm.feedItemId, scoops: parseFloat(taskForm.scoops) } : {}),
         ...(taskForm.perAnimal ? { perAnimal: true, animalType: taskForm.animalType.trim() } : {}),
       };
-      if (isEditingWeekly) setWeeklyTasks(weeklyTasks.filter(t => t.id !== editingTask!.id));
-      setFeedingTasks(isEditingFeeding
-        ? feedingTasks.map(t => t.id === editingTask!.id ? task : t)
-        : [...feedingTasks, task]);
+      setFeedingTasks(editingTaskType === "feeding" ? feedingTasks.map(t => t.id === id ? task : t) : [...feedingTasks, task]);
+    } else if (taskForm.session === "Weekly") {
+      const task: WeeklyTask = { id, label };
+      setWeeklyTasks(editingTaskType === "weekly" ? weeklyTasks.map(t => t.id === id ? task : t) : [...weeklyTasks, task]);
+    } else if (taskForm.session === "Monthly") {
+      const task: MonthlyTask = { id, label };
+      setMonthlyTasks(editingTaskType === "monthly" ? monthlyTasks.map(t => t.id === id ? task : t) : [...monthlyTasks, task]);
+    } else {
+      const existing = oneOffTasks.find(t => t.id === id);
+      const task: OneOffTask = { id, label, done: existing?.done ?? false };
+      setOneOffTasks(editingTaskType === "oneoff" ? oneOffTasks.map(t => t.id === id ? task : t) : [...oneOffTasks, task]);
     }
+
     setTaskForm(BLANK_TASK);
     setEditingTask(null);
+    setEditingTaskType(null);
     setShowForm(false);
   }
 
@@ -327,7 +460,7 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
         </div>
         <button
           onClick={() => {
-            if (showForm) { setShowForm(false); setEditingTask(null); setTaskForm(BLANK_TASK); }
+            if (showForm) { setShowForm(false); setEditingTask(null); setEditingTaskType(null); setTaskForm(BLANK_TASK); }
             else setShowForm(true);
           }}
           className="bg-accent text-white text-sm font-medium px-5 py-3 rounded-btn hover:bg-accent-hover transition-colors"
@@ -343,17 +476,27 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
             placeholder="Task label" value={taskForm.label}
             onChange={(e) => setTaskForm((p) => ({ ...p, label: e.target.value }))} required autoFocus
           />
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {(["AM", "PM", "Weekly"] as const).map((s) => (
               <button key={s} type="button"
                 onClick={() => setTaskForm((p) => ({ ...p, session: s, perAnimal: false, animalType: "", feedItemId: "", scoops: "" }))}
-                className={["flex-1 py-3 rounded-btn text-sm font-medium border transition-colors",
+                className={["py-3 rounded-btn text-sm font-medium border transition-colors",
                   taskForm.session === s ? "bg-accent text-white border-accent" : "bg-surface border-border text-text-secondary hover:border-border-strong"
                 ].join(" ")}
               >{s}</button>
             ))}
           </div>
-          {taskForm.session !== "Weekly" && (
+          <div className="grid grid-cols-2 gap-2">
+            {(["Monthly", "One-off"] as const).map((s) => (
+              <button key={s} type="button"
+                onClick={() => setTaskForm((p) => ({ ...p, session: s, perAnimal: false, animalType: "", feedItemId: "", scoops: "" }))}
+                className={["py-3 rounded-btn text-sm font-medium border transition-colors",
+                  taskForm.session === s ? "bg-accent text-white border-accent" : "bg-surface border-border text-text-secondary hover:border-border-strong"
+                ].join(" ")}
+              >{s}</button>
+            ))}
+          </div>
+          {(taskForm.session === "AM" || taskForm.session === "PM") && (
             <>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setTaskForm((p) => ({ ...p, perAnimal: !p.perAnimal, animalType: "" }))}
@@ -389,7 +532,7 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
             </>
           )}
           <div className="flex gap-2">
-            <button type="button" onClick={() => { setShowForm(false); setEditingTask(null); setTaskForm(BLANK_TASK); }} className="flex-1 py-3 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
+            <button type="button" onClick={() => { setShowForm(false); setEditingTask(null); setEditingTaskType(null); setTaskForm(BLANK_TASK); }} className="flex-1 py-3 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
             <button type="submit" className="flex-1 py-3 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">{editingTask ? "Save Changes" : "Add Task"}</button>
           </div>
         </form>
@@ -400,8 +543,8 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
         <span className="text-xs text-text-muted">Resets midnight {DateTime.now().setZone(timezone).toFormat("EEEE, MMMM d")}</span>
       </div>
 
-      <SessionBlock session="AM" tasks={amTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} requestEdit={requestEdit} />
-      <SessionBlock session="PM" tasks={pmTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} requestEdit={requestEdit} />
+      <SessionBlock session="AM" tasks={amTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} requestEdit={(t) => requestEdit(t, "feeding")} />
+      <SessionBlock session="PM" tasks={pmTasks} animals={animals} today={today} checkedState={checkedState} feedItems={feedItems} toggle={toggle} requestDelete={setPendingDelete} requestEdit={(t) => requestEdit(t, "feeding")} />
 
       {/* Weekly section */}
       <div className="border-t border-border" />
@@ -409,8 +552,23 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
         <p className="text-xs font-medium text-text-muted uppercase tracking-wide">Weekly Tasks</p>
         <span className="text-xs text-text-muted">Resets midnight {DateTime.fromISO(week).plus({ weeks: 1 }).toFormat("EEEE, MMMM d")}</span>
       </div>
+      <WeeklyBlock tasks={weeklyTasks} week={week} checkedState={checkedState} toggle={toggleWeekly} requestDelete={setPendingWeeklyDelete} requestEdit={(t) => requestEdit(t, "weekly")} />
 
-      <WeeklyBlock tasks={weeklyTasks} week={week} checkedState={checkedState} toggle={toggleWeekly} requestDelete={setPendingWeeklyDelete} requestEdit={requestEdit} />
+      {/* Monthly section */}
+      <div className="border-t border-border" />
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-text-muted uppercase tracking-wide">Monthly Tasks</p>
+        <span className="text-xs text-text-muted">Resets midnight {DateTime.fromISO(month).plus({ months: 1 }).toFormat("MMMM d")}</span>
+      </div>
+      <MonthlyBlock tasks={monthlyTasks} month={month} checkedState={checkedState} toggle={(t) => { const key = monthlyCheckedKey(month, t.id); setChecked(key, !checkedState[key]); }} requestDelete={setPendingMonthlyDelete} requestEdit={(t) => requestEdit(t, "monthly")} />
+
+      {/* One-off section */}
+      <div className="border-t border-border" />
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-text-muted uppercase tracking-wide">One-off Tasks</p>
+        <span className="text-xs text-text-muted">Persist until deleted</span>
+      </div>
+      <OneOffBlock tasks={oneOffTasks} toggle={(t) => setOneOffTasks(oneOffTasks.map(o => o.id === t.id ? { ...o, done: !o.done } : o))} requestDelete={setPendingOneOffDelete} requestEdit={(t) => requestEdit(t, "oneoff")} />
 
       {pendingDelete && (
         <ConfirmModal
@@ -427,6 +585,24 @@ export default function Checklist({ feedingTasks, weeklyTasks, feedItems, animal
           confirmLabel="Remove"
           onConfirm={() => { setWeeklyTasks(weeklyTasks.filter((t) => t.id !== pendingWeeklyDelete.id)); setPendingWeeklyDelete(null); }}
           onCancel={() => setPendingWeeklyDelete(null)}
+        />
+      )}
+
+      {pendingMonthlyDelete && (
+        <ConfirmModal
+          message={`Remove "${pendingMonthlyDelete.label}" from monthly tasks?`}
+          confirmLabel="Remove"
+          onConfirm={() => { setMonthlyTasks(monthlyTasks.filter((t) => t.id !== pendingMonthlyDelete.id)); setPendingMonthlyDelete(null); }}
+          onCancel={() => setPendingMonthlyDelete(null)}
+        />
+      )}
+
+      {pendingOneOffDelete && (
+        <ConfirmModal
+          message={`Remove "${pendingOneOffDelete.label}"?`}
+          confirmLabel="Remove"
+          onConfirm={() => { setOneOffTasks(oneOffTasks.filter((t) => t.id !== pendingOneOffDelete.id)); setPendingOneOffDelete(null); }}
+          onCancel={() => setPendingOneOffDelete(null)}
         />
       )}
     </div>

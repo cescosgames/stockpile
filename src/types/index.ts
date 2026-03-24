@@ -50,10 +50,22 @@ export type WeeklyTask = {
   label: string;
 };
 
+export type MonthlyTask = {
+  id: string;
+  label: string;
+};
+
+export type OneOffTask = {
+  id: string;
+  label: string;
+  done: boolean;
+};
+
 export type Note = {
   id: string;
   date: string; // ISO date
   text: string;
+  author?: string;
 };
 
 export type Contact = {

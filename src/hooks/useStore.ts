@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import PocketBase from "pocketbase";
 import type { RecordModel } from "pocketbase";
-import type { Animal, FeedItem, FeedingTask, WeeklyTask, Note, CheckedState, Settings, Contact } from "../types";
+import type { Animal, FeedItem, FeedingTask, WeeklyTask, MonthlyTask, OneOffTask, Note, CheckedState, Settings, Contact } from "../types";
 
-const STORE_VERSION = "v18"; // bumped: flexible units, servingUnit, location on FeedItem
+const STORE_VERSION = "v19"; // bumped: MonthlyTask, OneOffTask, Note.author
 
 // True when running inside the Electron wrapper — window.electronAPI is
 // injected by electron/preload.cjs via Electron's contextBridge
@@ -37,7 +37,7 @@ if (!isElectron) {
       }
     } catch { /* ignore */ }
 
-    ["animals", "feedItems", "feedingTasks", "weeklyTasks", "notes", "checkedState", "settings", "contacts"].forEach((k) =>
+    ["animals", "feedItems", "feedingTasks", "weeklyTasks", "monthlyTasks", "oneOffTasks", "notes", "checkedState", "settings", "contacts"].forEach((k) =>
       localStorage.removeItem(k)
     );
 
@@ -74,6 +74,9 @@ const SEED_FEED: FeedItem[] = [
 ];
 
 const SEED_NOTES: Note[] = [];
+
+const SEED_MONTHLY: MonthlyTask[] = [];
+const SEED_ONEOFF: OneOffTask[] = [];
 
 const SEED_WEEKLY: WeeklyTask[] = [
   { id: "seed0week000001", label: "Clean waterers" },
@@ -173,6 +176,14 @@ function pbToWeeklyTask(r: RecordModel): WeeklyTask {
   return { id: r.id, label: r.label };
 }
 
+function pbToMonthlyTask(r: RecordModel): MonthlyTask {
+  return { id: r.id, label: r.label };
+}
+
+function pbToOneOffTask(r: RecordModel): OneOffTask {
+  return { id: r.id, label: r.label, done: r.done ?? false };
+}
+
 function pbToNote(r: RecordModel): Note {
   return { id: r.id, date: r.date, text: r.text, ...(r.author ? { author: r.author } : {}) };
 }
@@ -204,6 +215,12 @@ export function useStore() {
   );
   const [weeklyTasks, setWeeklyTasksState] = useState<WeeklyTask[]>(() =>
     isElectron ? SEED_WEEKLY : load("weeklyTasks", SEED_WEEKLY)
+  );
+  const [monthlyTasks, setMonthlyTasksState] = useState<MonthlyTask[]>(() =>
+    isElectron ? SEED_MONTHLY : load("monthlyTasks", SEED_MONTHLY)
+  );
+  const [oneOffTasks, setOneOffTasksState] = useState<OneOffTask[]>(() =>
+    isElectron ? SEED_ONEOFF : load("oneOffTasks", SEED_ONEOFF)
   );
   const [notes, setNotesState] = useState<Note[]>(() =>
     isElectron ? SEED_NOTES : load("notes", SEED_NOTES)
@@ -245,15 +262,19 @@ export function useStore() {
         api.get("feedItems"),
         api.get("feedingTasks"),
         api.get("weeklyTasks"),
+        api.get("monthlyTasks"),
+        api.get("oneOffTasks"),
         api.get("notes"),
         api.get("checkedState"),
         api.get("settings"),
         api.get("contacts"),
-      ]).then(([a, f, t, w, n, c, s, co]) => {
+      ]).then(([a, f, t, w, m, oo, n, c, s, co]) => {
         if (a) setAnimalsState(a as Animal[]);
         if (f) setFeedItemsState(f as FeedItem[]);
         if (t) setFeedingTasksState(t as FeedingTask[]);
         if (w) setWeeklyTasksState(w as WeeklyTask[]);
+        if (m) setMonthlyTasksState(m as MonthlyTask[]);
+        if (oo) setOneOffTasksState(oo as OneOffTask[]);
         if (n) setNotesState(n as Note[]);
         if (c) setCheckedStateState(pruneCheckedState(c as CheckedState));
         if (s) setSettingsState(s as Settings);
@@ -277,12 +298,14 @@ export function useStore() {
         await pb.health.check();
         if (!active) return;
 
-        const [animalRecs, feedRecs, taskRecs, weeklyRecs, noteRecs, csRecs, settingsRecs, contactRecs] =
+        const [animalRecs, feedRecs, taskRecs, weeklyRecs, monthlyRecs, oneOffRecs, noteRecs, csRecs, settingsRecs, contactRecs] =
           await Promise.all([
             pb.collection("animals").getFullList<RecordModel>(),
             pb.collection("feedItems").getFullList<RecordModel>(),
             pb.collection("feedingTasks").getFullList<RecordModel>(),
             pb.collection("weeklyTasks").getFullList<RecordModel>(),
+            pb.collection("monthlyTasks").getFullList<RecordModel>().catch(() => [] as RecordModel[]),
+            pb.collection("oneOffTasks").getFullList<RecordModel>().catch(() => [] as RecordModel[]),
             pb.collection("notes").getFullList<RecordModel>(),
             pb.collection("checkedState").getFullList<RecordModel>(),
             pb.collection("settings").getFullList<RecordModel>(),
@@ -294,6 +317,8 @@ export function useStore() {
         const localFeed       = load<FeedItem[]>    ("feedItems",    SEED_FEED);
         const localTasks      = load<FeedingTask[]> ("feedingTasks", SEED_TASKS);
         const localWeekly     = load<WeeklyTask[]>  ("weeklyTasks",  SEED_WEEKLY);
+        const localMonthly    = load<MonthlyTask[]> ("monthlyTasks", SEED_MONTHLY);
+        const localOneOff     = load<OneOffTask[]>  ("oneOffTasks",  SEED_ONEOFF);
         const localNotes      = load<Note[]>        ("notes",        SEED_NOTES);
         const localChecked    = pruneCheckedState(load<CheckedState>("checkedState", {}));
         const localSettings   = load<Settings>      ("settings",     DEFAULT_SETTINGS);
@@ -321,6 +346,18 @@ export function useStore() {
         else if (localWeekly.length) {
           await Promise.all(localWeekly.map(w => pb.collection("weeklyTasks").create(w)));
           setWeeklyTasksState(localWeekly);
+        }
+
+        if (monthlyRecs.length) setMonthlyTasksState(monthlyRecs.map(pbToMonthlyTask));
+        else if (localMonthly.length) {
+          await Promise.all(localMonthly.map(m => pb.collection("monthlyTasks").create(m).catch(() => {})));
+          setMonthlyTasksState(localMonthly);
+        }
+
+        if (oneOffRecs.length) setOneOffTasksState(oneOffRecs.map(pbToOneOffTask));
+        else if (localOneOff.length) {
+          await Promise.all(localOneOff.map(o => pb.collection("oneOffTasks").create(o).catch(() => {})));
+          setOneOffTasksState(localOneOff);
         }
 
         if (noteRecs.length)    setNotesState(noteRecs.map(pbToNote));
@@ -386,6 +423,12 @@ export function useStore() {
         pb.collection("weeklyTasks").subscribe("*", ({ action, record }) =>
           setWeeklyTasksState(prev => applyEvent(prev, action, pbToWeeklyTask(record)))
         );
+        pb.collection("monthlyTasks").subscribe("*", ({ action, record }) =>
+          setMonthlyTasksState(prev => applyEvent(prev, action, pbToMonthlyTask(record)))
+        ).catch(() => {});
+        pb.collection("oneOffTasks").subscribe("*", ({ action, record }) =>
+          setOneOffTasksState(prev => applyEvent(prev, action, pbToOneOffTask(record)))
+        ).catch(() => {});
         pb.collection("notes").subscribe("*", ({ action, record }) =>
           setNotesState(prev => applyEvent(prev, action, pbToNote(record)))
         );
@@ -404,7 +447,7 @@ export function useStore() {
             timezone: record.timezone ?? prev.timezone,
           }));
         });
-      } catch (err) {
+      } catch {
         if (!active) return;
         setPbOnline(false);
       }
@@ -416,7 +459,7 @@ export function useStore() {
     return () => {
       active = false;
       clearInterval(healthTimer);
-      ["animals", "feedItems", "feedingTasks", "weeklyTasks", "notes", "contacts", "checkedState", "settings"]
+      ["animals", "feedItems", "feedingTasks", "weeklyTasks", "monthlyTasks", "oneOffTasks", "notes", "contacts", "checkedState", "settings"]
         .forEach(name => pb.collection(name).unsubscribe());
     };
   }, []);
@@ -461,6 +504,24 @@ export function useStore() {
     }
     save("weeklyTasks", weeklyTasks);
   }, [weeklyTasks, electronReady]);
+
+  useEffect(() => {
+    if (!electronReady) return;
+    if (isElectron) {
+      const t = setTimeout(() => window.electronAPI!.set("monthlyTasks", monthlyTasks), DEBOUNCE_MS);
+      return () => clearTimeout(t);
+    }
+    save("monthlyTasks", monthlyTasks);
+  }, [monthlyTasks, electronReady]);
+
+  useEffect(() => {
+    if (!electronReady) return;
+    if (isElectron) {
+      const t = setTimeout(() => window.electronAPI!.set("oneOffTasks", oneOffTasks), DEBOUNCE_MS);
+      return () => clearTimeout(t);
+    }
+    save("oneOffTasks", oneOffTasks);
+  }, [oneOffTasks, electronReady]);
 
   useEffect(() => {
     if (!electronReady) return;
@@ -560,6 +621,18 @@ export function useStore() {
     setWeeklyTasksState(next);
   }
 
+  function setMonthlyTasks(next: MonthlyTask[]) {
+    if (isPB && !pbOnline) return;
+    if (isPB) pbSyncCollection("monthlyTasks", monthlyTasks, next).catch(() => {});
+    setMonthlyTasksState(next);
+  }
+
+  function setOneOffTasks(next: OneOffTask[]) {
+    if (isPB && !pbOnline) return;
+    if (isPB) pbSyncCollection("oneOffTasks", oneOffTasks, next).catch(() => {});
+    setOneOffTasksState(next);
+  }
+
   function setNotes(next: Note[]) {
     if (isPB && !pbOnline) return;
     if (isPB) pbSyncCollection("notes", notes, next).catch(() => setPbOnline(false));
@@ -640,6 +713,8 @@ export function useStore() {
       deleteAll("feedItems", feedItems);
       deleteAll("feedingTasks", feedingTasks);
       deleteAll("weeklyTasks", weeklyTasks);
+      deleteAll("monthlyTasks", monthlyTasks);
+      deleteAll("oneOffTasks", oneOffTasks);
       deleteAll("notes", notes);
       deleteAll("contacts", contacts);
       if (checkedStateRecordId.current) {
@@ -651,6 +726,8 @@ export function useStore() {
     setFeedItemsState([]);
     setFeedingTasksState([]);
     setWeeklyTasksState([]);
+    setMonthlyTasksState([]);
+    setOneOffTasksState([]);
     setNotesState([]);
     setCheckedStateState({});
     setContactsState([]);
@@ -659,8 +736,8 @@ export function useStore() {
   }
 
   return {
-    animals, feedItems, feedingTasks, weeklyTasks, notes, checkedState, settings, contacts,
-    setAnimals, setFeedItems, setFeedingTasks, setWeeklyTasks, setNotes, setChecked, setSettings, setContacts, wipeData,
+    animals, feedItems, feedingTasks, weeklyTasks, monthlyTasks, oneOffTasks, notes, checkedState, settings, contacts,
+    setAnimals, setFeedItems, setFeedingTasks, setWeeklyTasks, setMonthlyTasks, setOneOffTasks, setNotes, setChecked, setSettings, setContacts, wipeData,
     pbOnline,
   };
 }
