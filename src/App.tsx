@@ -67,8 +67,20 @@ export default function App() {
         <SettingsModal
           settings={settings}
           animals={store.animals}
+          feedItems={store.feedItems}
+          feedingTasks={store.feedingTasks}
+          weeklyTasks={store.weeklyTasks}
+          monthlyTasks={store.monthlyTasks}
+          oneOffTasks={store.oneOffTasks}
           onSave={setSettings}
-          onImportAnimals={store.setAnimals}
+          onImport={({ animals, feedItems, feedingTasks, weeklyTasks, monthlyTasks, oneOffTasks }) => {
+            store.setAnimals(animals);
+            store.setFeedItems(feedItems);
+            store.setFeedingTasks(feedingTasks);
+            store.setWeeklyTasks(weeklyTasks);
+            store.setMonthlyTasks(monthlyTasks);
+            store.setOneOffTasks(oneOffTasks);
+          }}
           onWipe={store.wipeData}
           onClose={() => setShowSettings(false)}
         />

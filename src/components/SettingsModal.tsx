@@ -1,12 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { DateTime } from "luxon";
-import type { Settings, Animal } from "../types";
+import type { Settings, Animal, FeedItem, FeedingTask, WeeklyTask, MonthlyTask, OneOffTask } from "../types";
+
+type ImportPayload = {
+  animals: Animal[];
+  feedItems: FeedItem[];
+  feedingTasks: FeedingTask[];
+  weeklyTasks: WeeklyTask[];
+  monthlyTasks: MonthlyTask[];
+  oneOffTasks: OneOffTask[];
+};
 
 type Props = {
   settings: Settings;
   animals: Animal[];
+  feedItems: FeedItem[];
+  feedingTasks: FeedingTask[];
+  weeklyTasks: WeeklyTask[];
+  monthlyTasks: MonthlyTask[];
+  oneOffTasks: OneOffTask[];
   onSave: (s: Settings) => void;
-  onImportAnimals: (animals: Animal[]) => void;
+  onImport: (payload: ImportPayload) => void;
   onWipe: () => void;
   onClose: () => void;
 };
@@ -44,7 +58,7 @@ const TIMEZONES = [
   { label: "Pacific/Auckland (NZST)",       value: "Pacific/Auckland" },
 ];
 
-export default function SettingsModal({ settings, animals, onSave, onImportAnimals, onWipe, onClose }: Props) {
+export default function SettingsModal({ settings, animals, feedItems, feedingTasks, weeklyTasks, monthlyTasks, oneOffTasks, onSave, onImport, onWipe, onClose }: Props) {
   const [form, setForm] = useState(settings);
   const [clock, setClock] = useState("");
   const [confirmWipe, setConfirmWipe] = useState(false);
@@ -72,12 +86,17 @@ export default function SettingsModal({ settings, animals, onSave, onImportAnima
       _stockpile: true,
       exportedAt: new Date().toISOString(),
       animals,
+      feedItems,
+      feedingTasks,
+      weeklyTasks,
+      monthlyTasks,
+      oneOffTasks,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `stockpile-animals-${new Date().toISOString().split("T")[0]}.json`;
+    a.download = `stockpile-backup-${new Date().toISOString().split("T")[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -98,6 +117,42 @@ export default function SettingsModal({ settings, animals, onSave, onImportAnima
     );
   }
 
+  function isValidFeedItem(f: unknown): f is FeedItem {
+    if (typeof f !== "object" || f === null) return false;
+    const o = f as Record<string, unknown>;
+    return (
+      typeof o.id === "string" &&
+      typeof o.name === "string" &&
+      typeof o.unit === "string" &&
+      typeof o.qty === "number" &&
+      typeof o.minQty === "number" &&
+      typeof o.maxQty === "number" &&
+      typeof o.scoopSize === "number"
+    );
+  }
+
+  function isValidFeedingTask(t: unknown): t is FeedingTask {
+    if (typeof t !== "object" || t === null) return false;
+    const o = t as Record<string, unknown>;
+    return (
+      typeof o.id === "string" &&
+      typeof o.label === "string" &&
+      ["AM", "PM"].includes(o.session as string)
+    );
+  }
+
+  function isValidSimpleTask(t: unknown): t is WeeklyTask {
+    if (typeof t !== "object" || t === null) return false;
+    const o = t as Record<string, unknown>;
+    return typeof o.id === "string" && typeof o.label === "string";
+  }
+
+  function isValidOneOffTask(t: unknown): t is OneOffTask {
+    if (typeof t !== "object" || t === null) return false;
+    const o = t as Record<string, unknown>;
+    return typeof o.id === "string" && typeof o.label === "string" && typeof o.done === "boolean";
+  }
+
   function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     setImportError("");
     const file = e.target.files?.[0];
@@ -106,15 +161,42 @@ export default function SettingsModal({ settings, animals, onSave, onImportAnima
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result as string);
-        if (data._stockpile !== true || !Array.isArray(data.animals)) {
+        if (data._stockpile !== true) {
           setImportError("This file wasn't exported from Stockpile. No changes made.");
           return;
         }
-        if (!data.animals.every(isValidAnimal)) {
+        if (!Array.isArray(data.animals) || !data.animals.every(isValidAnimal)) {
           setImportError("File contains invalid animal data. No changes made.");
           return;
         }
-        onImportAnimals(data.animals);
+        if (data.feedItems !== undefined && (!Array.isArray(data.feedItems) || !data.feedItems.every(isValidFeedItem))) {
+          setImportError("File contains invalid feed data. No changes made.");
+          return;
+        }
+        if (data.feedingTasks !== undefined && (!Array.isArray(data.feedingTasks) || !data.feedingTasks.every(isValidFeedingTask))) {
+          setImportError("File contains invalid feeding task data. No changes made.");
+          return;
+        }
+        if (data.weeklyTasks !== undefined && (!Array.isArray(data.weeklyTasks) || !data.weeklyTasks.every(isValidSimpleTask))) {
+          setImportError("File contains invalid weekly task data. No changes made.");
+          return;
+        }
+        if (data.monthlyTasks !== undefined && (!Array.isArray(data.monthlyTasks) || !data.monthlyTasks.every(isValidSimpleTask))) {
+          setImportError("File contains invalid monthly task data. No changes made.");
+          return;
+        }
+        if (data.oneOffTasks !== undefined && (!Array.isArray(data.oneOffTasks) || !data.oneOffTasks.every(isValidOneOffTask))) {
+          setImportError("File contains invalid one-off task data. No changes made.");
+          return;
+        }
+        onImport({
+          animals: data.animals,
+          feedItems: data.feedItems ?? feedItems,
+          feedingTasks: data.feedingTasks ?? feedingTasks,
+          weeklyTasks: data.weeklyTasks ?? weeklyTasks,
+          monthlyTasks: data.monthlyTasks ?? monthlyTasks,
+          oneOffTasks: data.oneOffTasks ?? oneOffTasks,
+        });
         onClose();
       } catch {
         setImportError("Couldn't read the file. Make sure it's a valid Stockpile export.");
@@ -224,11 +306,11 @@ export default function SettingsModal({ settings, animals, onSave, onImportAnima
         {/* Data management */}
         <div className="px-6 pb-6 flex flex-col gap-4 border-t border-border pt-5">
           <div className="flex items-center gap-2">
-            <p className="text-xs font-medium text-text-secondary uppercase tracking-wide">Animal Data</p>
+            <p className="text-xs font-medium text-text-secondary uppercase tracking-wide">Farm Data</p>
             <div className="relative group">
               <span className="w-4 h-4 rounded-full border border-text-muted text-text-muted text-[10px] font-bold flex items-center justify-center cursor-help select-none">?</span>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-stone-800 text-white text-xs rounded-md px-3 py-2 hidden group-hover:block z-10 leading-relaxed">
-                Regularly export your animal records as a backup. If your data is ever lost or reset, you can restore it from an export file.
+                Regularly export your farm data as a backup. If your data is ever lost or reset, you can restore it from an export file.
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-stone-800" />
               </div>
             </div>
@@ -238,18 +320,18 @@ export default function SettingsModal({ settings, animals, onSave, onImportAnima
               onClick={handleExport}
               className="flex-1 py-2 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong"
             >
-              Export Animals
+              Export Data
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex-1 py-2 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong"
             >
-              Import Animals
+              Import Data
             </button>
             <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
           </div>
           {importError && <p className="text-xs text-red-600">{importError}</p>}
-          <p className="text-xs text-text-muted">Import replaces your current animals with the contents of a Stockpile export file.</p>
+          <p className="text-xs text-text-muted">Import replaces your current animals, feed inventory, and tasks with the contents of a Stockpile export file.</p>
         </div>
 
         {/* Danger zone */}
