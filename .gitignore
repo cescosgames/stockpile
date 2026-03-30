@@ -31,3 +31,6 @@ dist-electron
 
 # Personal working notes
 docs/electron-deploy-checklist.md
+
+# Personal Data
+stockpile-import.json
