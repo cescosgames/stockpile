@@ -44,6 +44,9 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [noteAuthor, setNoteAuthor] = useState("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [editAuthor, setEditAuthor] = useState("");
   const today = todayKey(timezone);
   const totalAnimals = animals.length;
   const lowStock = feedItems.filter((f) => f.qty <= f.minQty);
@@ -125,15 +128,54 @@ export default function Dashboard({ animals, feedItems, feedingTasks, checkedSta
           {notes.length === 0 && <p className="text-sm text-text-muted">No notes yet.</p>}
           {notes.map((note) => (
             <div key={note.id} className="flex gap-3 bg-surface-sunken rounded px-3 py-2.5">
-              <div className="text-xs text-text-muted w-24 shrink-0 pt-0.5">
-                <div>{DateTime.fromISO(note.date).toFormat("dd MMM yyyy")}</div>
-                {note.author && <div className="mt-0.5 font-medium">{note.author}</div>}
-              </div>
-              <p className="text-sm text-text-primary flex-1 whitespace-pre-wrap">{note.text}</p>
-              <button
-                onClick={() => setNotes(notes.filter((n) => n.id !== note.id))}
-                className="text-text-muted hover:text-danger transition-colors shrink-0 text-xs"
-              >✕</button>
+              {editingNoteId === note.id ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!editText.trim()) return;
+                    setNotes(notes.map((n) => n.id === note.id ? { ...n, text: editText.trim(), author: editAuthor.trim() || undefined } : n));
+                    setEditingNoteId(null);
+                  }}
+                  className="flex-1 flex flex-col gap-2"
+                >
+                  <textarea
+                    rows={3}
+                    autoFocus
+                    className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent resize-none"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                  />
+                  <input
+                    className="border border-border rounded-btn px-3 py-2 text-sm bg-surface text-text-primary focus:outline-none focus:border-accent"
+                    placeholder="Author (optional)"
+                    value={editAuthor}
+                    onChange={(e) => setEditAuthor(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setEditingNoteId(null)} className="flex-1 py-1.5 rounded-btn border border-border text-sm text-text-secondary hover:border-border-strong">Cancel</button>
+                    <button type="submit" className="flex-1 py-1.5 rounded-btn bg-accent text-white text-sm font-medium hover:bg-accent-hover">Save</button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="text-xs text-text-muted w-14 shrink-0 pt-0.5">
+                    <div>{DateTime.fromISO(note.date).toFormat("MM/dd/yy")}</div>
+                    {note.author && <div className="mt-0.5 font-medium">{note.author}</div>}
+                  </div>
+                  <p className="text-sm text-text-primary flex-1 whitespace-pre-wrap">{note.text}</p>
+                  <div className="flex items-center shrink-0">
+                    <button
+                      onClick={() => { setEditingNoteId(note.id); setEditText(note.text); setEditAuthor(note.author ?? ""); setShowNoteForm(false); }}
+                      className="text-text-muted hover:text-accent text-xl leading-none px-2 py-1.5 rounded hover:bg-surface-sunken transition-colors"
+                      title="Edit note"
+                    >✎</button>
+                    <button
+                      onClick={() => setNotes(notes.filter((n) => n.id !== note.id))}
+                      className="text-text-muted hover:text-danger text-xl leading-none px-2 py-1.5 rounded hover:bg-danger-subtle transition-colors"
+                    >✕</button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
