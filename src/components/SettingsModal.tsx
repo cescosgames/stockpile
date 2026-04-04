@@ -358,6 +358,11 @@ export default function SettingsModal({ settings, animals, feedItems, feedingTas
             </div>
           )}
         </div>
+
+        {/* Version */}
+        <div className="px-6 pb-5 border-t border-border pt-4">
+          <p className="text-xs text-text-muted">stockpile v0.2.1</p>
+        </div>
       </div>
     </div>
   );

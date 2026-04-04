@@ -106,7 +106,7 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
           <p className="hidden sm:block text-base font-semibold text-text-primary tabular-nums">{clock}</p>
           <button
             onClick={onOpenSettings}
-            className="text-text-muted hover:text-text-primary transition-colors self-center"
+            className="text-text-muted hover:text-text-primary transition-colors self-center p-2 -mr-2"
             title="Settings"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -153,7 +153,7 @@ export default function Layout({ active, farmName, timezone, onTabChange, onOpen
       </main>
 
       <footer className="hidden sm:flex py-3 px-6 justify-end">
-        <p className="text-xs text-text-muted">stockpile v0.1.0 / {syncMode === "network" ? (pbOnline ? "syncing" : "offline") : "local"}</p>
+        <p className="text-xs text-text-muted">stockpile v0.2.1 / {syncMode === "network" ? (pbOnline ? "syncing" : "offline") : "local"}</p>
       </footer>
 
       {/* Bottom nav — mobile only — Apple glass pill */}
