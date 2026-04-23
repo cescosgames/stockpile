@@ -6,25 +6,26 @@ This guide sets up a self-hosted PocketBase instance on a Raspberry Pi on your f
 
 ## What You Need
 
-### Hardware — Minimum Setup (~$28–33)
+### Hardware — Minimum Requirements
 
-PocketBase is a single Go binary backed by SQLite. For a small farm with a handful of devices, the database will stay well under a few MB for years. The minimum hardware is genuinely sufficient — don't over-spec this.
+> ⚠️ **The original Pi Zero W is NOT compatible.** PocketBase has never shipped an ARMv6 binary. The Pi Zero W uses ARMv6 and cannot run PocketBase at any version. **You need at least a Pi Zero 2 W.**
 
-| Item | Notes | Approx. cost |
-|---|---|---|
-| **Raspberry Pi Zero 2 W** | Quad-core 64-bit ARM @ 1GHz, 512MB RAM. Handles this workload easily. | $15 |
-| **16 GB microSD card** | Class 10 / A1 rated. Samsung Endurance or SanDisk Endurance series recommended — rated for continuous write cycles. | $6–8 |
-| **USB-C power supply (5V / 2.5A)** | Any quality USB-C charger works. The official Pi supply is reliable. | $7–10 |
+| Item | Notes |
+|---|---|
+| **Raspberry Pi Zero 2 W** (minimum) | Quad-core ARMv7/ARM64, 512MB RAM, built-in Wi-Fi. ~$15. Use the 64-bit OS image and `linux_arm64` PocketBase binary. |
+| **Any Pi 2, 3, or 4** | All work fine — ARMv7/ARM64, same setup. Pi 3B+ or 4 will be noticeably faster. |
+| **microSD card (8GB+)** | Class 10 / A1 rated recommended. Test it before use (see Step 0). |
+| **Power supply** | 5V micro-USB for Pi Zero 2 W; USB-C for Pi 3/4. Check your specific model. |
+| **Case** | Optional but recommended for physical protection. |
 
-> **Connectivity note:** The Pi Zero 2 W has no Ethernet port — it connects via Wi-Fi. For most farm networks this is fine. If your router is far from where the Pi will live and Wi-Fi is unreliable, add a **USB-to-Ethernet adapter (~$5)** and a micro-USB OTG adapter to use it.
-
-> **Upgrade path:** If you later add more devices, want a wired connection without an adapter, or run other services on the same Pi, a **Raspberry Pi 3B+** (~$35 used) adds a full Ethernet port and 1GB RAM. A **Pi 4 (2GB, ~$45)** is the ceiling for this use case — anything above that is overkill for a farm sync server.
+> **What about the original Pi Zero W?** It's ARMv6-only. PocketBase has never provided an ARMv6 binary and there is no workaround. If you have one, it cannot be used as a Stockpile sync server.
 
 ### Other Requirements
 
 - **A computer** to flash the SD card and SSH from
 - **A router with admin access** — needed to assign a static IP to the Pi (see Step 3)
 - All farm devices (phones, tablets, desktop) must be on the same local network as the Pi
+- The Pi Zero W connects via **Wi-Fi only** — no Ethernet port
 
 ### Software (on your computer)
 - [Raspberry Pi Imager](https://www.raspberrypi.com/software/) — to flash the SD card
@@ -32,42 +33,95 @@ PocketBase is a single Go binary backed by SQLite. For a small farm with a handf
 
 ---
 
+## Step 0 — Test the SD Card
+
+No-name cards often lie about capacity or have bad sectors. Do this before flashing.
+
+```bash
+# Install F3 via Homebrew (on your Mac)
+brew install f3
+
+# Insert the card, then find its disk identifier
+diskutil list
+```
+
+Look for the external disk around 8GB — it will say `(external, physical)` and show a FAT32 partition. Note the disk number (e.g. `disk4`).
+
+> ⚠️ **Double-check the disk number before running anything.** `disk0` is your Mac's internal SSD — writing to it will wipe your entire computer. The SD card will always show as `(external, physical)` with a size around 7–8 GB. If in doubt, remove the card, run `diskutil list` again, and compare — the entry that disappears is the card.
+
+Now run the write test. F3 on macOS works on the **mounted volume**, not the raw device:
+
+```bash
+# Write test — use the volume path, not the device path
+f3write /Volumes/NO\ NAME
+
+# Then read it back
+f3read /Volumes/NO\ NAME
+```
+
+> If `/Volumes/NO NAME` doesn't exist, run `diskutil mountDisk /dev/disk4` (use your disk number) and try again.
+
+If it reports `Data LOST: 0.00 Byte` and no corrupted sectors, the card is good. If there are any errors, discard the card — don't use it for the Pi.
+
+After the test passes, clean up the test files before flashing:
+
+```bash
+rm /Volumes/NO\ NAME/*.h2w
+```
+
+---
+
 ## Step 1 — Flash the SD Card
 
 1. Open Raspberry Pi Imager on your computer.
-2. **Choose Device** → select your Pi model.
+2. **Choose Device** → select your Pi model (e.g. Raspberry Pi Zero 2 W).
 3. **Choose OS** → Raspberry Pi OS (other) → **Raspberry Pi OS Lite (64-bit)**.
-   > Use the 64-bit Lite image. No desktop needed — this Pi runs headless.
+   > Use 64-bit for Pi Zero 2 W, Pi 3, and Pi 4. This gives you the `aarch64` architecture and the `linux_arm64` PocketBase binary.
 4. **Choose Storage** → select your SD card.
-5. Click **Next**, then **Edit Settings** when prompted:
-   - **Hostname:** `stockpile` (or any name you like)
-   - **Username/Password:** set a username and a strong password — you'll need these to SSH in
-   - **Wireless LAN:** leave blank if using Ethernet (recommended)
+5. Click **Next** — Imager will ask "Would you like to apply OS customisation settings?" → click **Edit Settings** (not No — if you click No, SSH won't be enabled and the Pi will be unreachable).
+6. Fill in the settings:
+   - **Hostname:** `stockpile` (so you can SSH as `stockpile.local`)
+   - **Username/Password:** set a username and a strong password — write it down
+   - **Wireless LAN:** enter your Wi-Fi SSID and password. SSIDs are case-sensitive — enter it exactly as it appears.
    - **Locale:** set your timezone and keyboard layout
-6. On the **Services** tab, enable **SSH** with password authentication.
-7. Click **Save** → **Yes** to apply settings → **Yes** to confirm the flash.
+7. On the **Services** tab → **Enable SSH** → **Use password authentication**.
+8. Click **Save** → **Yes** to apply settings → **Yes** to confirm the flash.
 
-Remove the SD card, insert it into the Pi, plug in Ethernet, then power on.
+Remove the SD card, insert it into the Pi, and connect the power supply.
+
+> **Pi Zero 2 W:** Has two micro-USB ports. The one labelled **PWR IN** (closer to the corner) is for power — plug in there, not the middle USB port. If you plug into the wrong port the Pi won't boot.
 
 ---
 
 ## Step 2 — Connect to the Pi
 
-Give the Pi about 60 seconds to boot, then find its IP address. Check your router's admin panel — look for a connected device named `stockpile` (or whatever hostname you set). Note its IP address (e.g. `192.168.1.42`).
+The Pi Zero W takes **3–5 minutes** on first boot — it expands the filesystem, applies settings, and connects to Wi-Fi before SSH becomes available. Give it the full time.
 
-SSH into the Pi from your computer:
+The green LED will flicker during boot. Once it goes **solid green**, SSH should be ready shortly after.
+
+Try SSH by hostname first:
 
 ```bash
-ssh your-username@192.168.1.42
+ssh your-username@stockpile.local
 ```
 
-Replace `your-username` and the IP with your own. Accept the host fingerprint when prompted and enter your password.
+If that fails, find the IP from your router's admin panel. The Pi may appear as `stockpile`, or as its MAC address (e.g. `MAC-6CC370`) before the hostname resolves — either way, note its IP and use it directly:
+
+```bash
+ssh your-username@192.168.0.244
+```
+
+> If you get `Connection refused` (not a timeout), the Pi is on the network but SSH isn't ready yet — keep retrying every 30 seconds. You can confirm the Pi is reachable with `ping 192.168.0.244`. If you can ping it but SSH is refused, just wait.
+
+Accept the host fingerprint when prompted (`yes`) and enter your password. The password prompt shows nothing as you type — that's normal.
 
 Once you're in, update the system:
 
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
+
+> This takes a long time on the Pi Zero W — 5–10 minutes is normal. Let it finish.
 
 ---
 
@@ -88,7 +142,7 @@ Most routers let you pin a device's IP to its MAC address (called a "DHCP reserv
 
 Use this if your router doesn't support DHCP reservations.
 
-Find your network interface name (usually `eth0` for Ethernet):
+Find your network interface name (Wi-Fi on the Pi Zero W is `wlan0`):
 
 ```bash
 ip link show
@@ -103,7 +157,7 @@ sudo nano /etc/dhcpcd.conf
 Add the following lines at the bottom, substituting your own values:
 
 ```
-interface eth0
+interface wlan0
 static ip_address=192.168.1.42/24
 static routers=192.168.1.1
 static domain_name_servers=192.168.1.1
@@ -127,21 +181,33 @@ SSH back in using the new static IP.
 
 PocketBase is a single binary — no package manager needed.
 
+First, confirm your Pi's architecture:
+
+```bash
+uname -m
+```
+
+- `aarch64` → 64-bit ARM → use `linux_arm64` (Pi Zero 2 W, Pi 3, Pi 4 with 64-bit OS)
+- `armv7l` → 32-bit ARMv7 → use `linux_armv7` (Pi Zero 2 W or Pi 2/3 with 32-bit OS)
+
+Then download the matching binary:
+
 ```bash
 # Create a directory for PocketBase
 mkdir -p ~/pocketbase && cd ~/pocketbase
 
-# Download PocketBase v0.36.6 for 64-bit ARM (Raspberry Pi 4/5 with 64-bit OS)
-wget https://github.com/pocketbase/pocketbase/releases/download/v0.36.6/pocketbase_0.36.6_linux_arm64.zip
+# For 64-bit ARM (aarch64) — Pi Zero 2 W with 64-bit OS
+wget https://github.com/pocketbase/pocketbase/releases/download/v0.37.3/pocketbase_0.37.3_linux_arm64.zip
 
-# Unzip
-unzip pocketbase_0.36.6_linux_arm64.zip
+# OR for 32-bit ARMv7 (armv7l)
+# wget https://github.com/pocketbase/pocketbase/releases/download/v0.37.3/pocketbase_0.37.3_linux_armv7.zip
+
+# Unzip (install unzip first if needed: sudo apt install unzip -y)
+unzip pocketbase_0.37.3_linux_arm64.zip
 
 # Make it executable
 chmod +x pocketbase
 ```
-
-> **If you're using a 32-bit Raspberry Pi OS**, replace `linux_arm64` with `linux_armv7` in the URL above. You can check your OS bitness with `uname -m` — `aarch64` means 64-bit, `armv7l` means 32-bit.
 
 Test that it runs:
 
@@ -177,7 +243,7 @@ Once logged in:
 4. Upload `docs/pb_schema.json` from this repository.
 5. Click **Review** → **Confirm and import**.
 
-You should now see 7 collections created: `animals`, `feedItems`, `feedingTasks`, `weeklyTasks`, `notes`, `checkedState`, and `settings`.
+You should now see 9 collections created: `animals`, `feedItems`, `feedingTasks`, `weeklyTasks`, `monthlyTasks`, `oneOffTasks`, `notes`, `checkedState`, `contacts`, and `settings`.
 
 Stop PocketBase for now (`Ctrl+C` in the SSH session) — you'll set it up to start automatically in the next step.
 
@@ -345,7 +411,7 @@ In the Admin UI: **Settings → Import collections → Upload JSON file** → se
 
 > **Warning prompt:** PocketBase will warn about deleting fields from system collections (`_superusers`, `users`, etc.). This is expected — our schema doesn't include those system fields. Confirm and proceed.
 
-You should see 7 collections created: `animals`, `feedItems`, `feedingTasks`, `weeklyTasks`, `notes`, `checkedState`, `settings`.
+You should see 10 collections created: `animals`, `feedItems`, `feedingTasks`, `weeklyTasks`, `monthlyTasks`, `oneOffTasks`, `notes`, `checkedState`, `contacts`, and `settings`.
 
 ### 5 — Connect the app
 
